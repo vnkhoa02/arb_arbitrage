@@ -1,5 +1,8 @@
 import 'dotenv/config';
 import '@nomicfoundation/hardhat-ethers';
+import '@typechain/hardhat';
+import '@nomicfoundation/hardhat-ethers';
+import '@nomicfoundation/hardhat-chai-matchers';
 import type { HardhatUserConfig } from 'hardhat/config';
 
 const config: HardhatUserConfig = {
