@@ -1,75 +1,85 @@
-import { expect } from 'chai';
+import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
-import { FlashSwap, MockERC20 } from '../typechain-types';
+import { FlashSwap, IERC20, IWETH } from '../typechain-types';
 
-describe('FlashSwap Contract', function () {
+const DAI = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
+const WETH9 = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+const USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+
+describe('FlashSwap Tests', () => {
   let flashSwap: FlashSwap;
-  let owner: any;
-  let addr1: any;
-  let USDC: MockERC20;
-  let WETH: MockERC20;
+  let signer: Signer;
+  let weth: IWETH;
+  let dai: IERC20;
+  let usdc: IERC20;
 
-  beforeEach(async function () {
-    [owner, addr1] = await ethers.getSigners();
+  before(async () => {
+    const [deployer] = await ethers.getSigners();
+    signer = deployer;
 
-    // Deploy the FlashSwap contract
-    const FlashSwapFactory = await ethers.getContractFactory('FlashSwap');
-    flashSwap = (await FlashSwapFactory.deploy()) as FlashSwap;
+    const flashSwapFactory = await ethers.getContractFactory('FlashSwap');
+    flashSwap = await flashSwapFactory.deploy();
     await flashSwap.waitForDeployment();
 
-    // Deploy Mock USDC token
-    const MockERC20Factory = await ethers.getContractFactory('MockERC20');
-    USDC = (await MockERC20Factory.deploy('USD Coin', 'USDC', 6)) as MockERC20;
-    await USDC.waitForDeployment();
-
-    // Deploy Mock WETH token
-    WETH = (await MockERC20Factory.deploy(
-      'Wrapped Ether',
-      'WETH',
-      18,
-    )) as MockERC20;
-    await WETH.waitForDeployment();
+    weth = (await ethers.getContractAt('IWETH', WETH9)) as IWETH;
+    dai = (await ethers.getContractAt('IERC20', DAI)) as IERC20;
+    usdc = (await ethers.getContractAt('IERC20', USDC)) as IERC20;
   });
 
-  describe('swapExactETHForUSDC', function () {
-    it('should swap ETH for USDC correctly', async function () {
-      const ethAmount = ethers.parseEther('0.01'); // 0.01 ETH
-      // Perform the swap
-      await flashSwap.connect(owner).swapExactETHForUSDC(ethAmount, {
-        value: ethAmount,
-      });
-      // Check if the recipient got USDC
-      const usdcBalance = await USDC.balanceOf(owner.address);
-      expect(usdcBalance).to.be.above(0); // USDC balance of owner should increase
-    });
+  it('swapExactInputSingle', async () => {
+    const amountIn = ethers.parseEther('0.1'); // 1 WETH
 
-    it('should fail if ETH sent is less than required', async function () {
-      const ethAmount = ethers.parseEther('0.001'); // 0.001 ETH, below the minimum swap
-      await expect(
-        flashSwap
-          .connect(owner)
-          .swapExactETHForUSDC(ethAmount, { value: ethAmount }),
-      ).to.be.revertedWith('Minimum swap is $5 worth of ETH');
-    });
+    await weth.deposit({ value: amountIn });
+    const address = await flashSwap.getAddress();
+    await weth.approve(address, amountIn);
 
-    it('should calculate minimum output correctly', async function () {
-      const ethAmount = ethers.parseEther('0.01'); // 0.01 ETH
-      const amountOutMin = await flashSwap.calculateAmountOutMinimum(ethAmount);
+    await flashSwap.swapExactInputSingle(amountIn);
 
-      // Check if amountOutMin is calculated properly based on the ETH price feed
-      expect(amountOutMin).to.be.above(0);
-    });
-
-    it('should emit an event on successful swap', async function () {
-      const ethAmount = ethers.parseEther('0.01'); // 0.01 ETH
-
-      await expect(
-        flashSwap.connect(owner).swapExactETHForUSDC(ethAmount, {
-          value: ethAmount,
-        }),
-      )
-        .to.emit(flashSwap, 'SwapExecuted')
-        .withArgs(owner.address, ethAmount);
-    });
+    const balance = await dai.balanceOf(await signer.getAddress());
+    console.log('DAI balance after swapExactInputSingle:', balance.toString());
   });
+
+  // it('swapExactOutputSingle', async () => {
+  //   const wethAmountInMax = ethers.utils.parseEther('1');
+  //   const daiAmountOut = ethers.utils.parseUnits('100', 18);
+
+  //   await weth.deposit({ value: wethAmountInMax });
+  //   await weth.approve(flashSwap.address, wethAmountInMax);
+
+  //   await flashSwap.swapExactOutputSingle(daiAmountOut, wethAmountInMax);
+
+  //   const balance = await dai.balanceOf(await signer.getAddress());
+  //   console.log('DAI balance after swapExactOutputSingle:', balance.toString());
+  // });
+
+  // it('swapExactInputMultihop', async () => {
+  //   const amountIn = ethers.utils.parseEther('1');
+
+  //   await weth.deposit({ value: amountIn });
+  //   await weth.approve(flashSwap.address, amountIn);
+
+  //   await flashSwap.swapExactInputMultihop(amountIn);
+
+  //   const balance = await dai.balanceOf(await signer.getAddress());
+  //   console.log(
+  //     'DAI balance after swapExactInputMultihop:',
+  //     balance.toString(),
+  //   );
+  // });
+
+  // it('swapExactOutputMultihop', async () => {
+  //   const wethAmountInMax = ethers.utils.parseEther('1');
+  //   const daiAmountOut = ethers.utils.parseUnits('100', 18);
+
+  //   await weth.deposit({ value: wethAmountInMax });
+  //   await weth.approve(flashSwap.address, wethAmountInMax);
+
+  //   await flashSwap.swapExactOutputMultihop(daiAmountOut, wethAmountInMax);
+
+  //   const balance = await dai.balanceOf(await signer.getAddress());
+  //   console.log(
+  //     'DAI balance after swapExactOutputMultihop:',
+  //     balance.toString(),
+  //   );
+  // });
 });
