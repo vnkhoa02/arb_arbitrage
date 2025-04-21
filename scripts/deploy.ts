@@ -5,9 +5,9 @@ async function main() {
   console.log('Deploying FlashSwap...');
 
   const flashSwap = await FlashSwap.deploy();
-  await flashSwap.ƒdeployed();
-
-  console.log('FlashSwap deployed to:', flashSwap.address);
+  await flashSwap.waitForDeployment();
+  const address = await flashSwap.getAddress();
+  console.log('FlashSwap deployed to:', address);
 }
 
 main().catch((error) => {
