@@ -44,12 +44,14 @@ describe('GetQuote (Mainnet Tests)', () => {
   it('fetches quote for 1 ETH → USDC', async function () {
     await skipIfNotMainnet.call(this);
 
-    const quote = await quoteContract.getEstimatedAmountOut(
+    const tx = await quoteContract.getEstimatedAmountOut(
       WETH9,
       swapAmount,
       DAI,
       3000,
     );
+    const receipt = await tx.wait();
+    const quote = receipt?.logs[0].data ?? 0;
 
     console.log('Estimated output for 1 ETH → DAI:', quote);
     expect(quote).to.be.gt(0);
@@ -59,12 +61,14 @@ describe('GetQuote (Mainnet Tests)', () => {
     await skipIfNotMainnet.call(this);
 
     const halfSwapAmount = ethers.parseEther('0.5');
-    const quote = await quoteContract.getEstimatedAmountOut(
+    const tx = await quoteContract.getEstimatedAmountOut(
       WETH9,
       halfSwapAmount,
       DAI,
       3000,
     );
+    const receipt = await tx.wait();
+    const quote = receipt?.logs[0].data ?? 0;
     console.log('Estimated output for 0.5 ETH → DAI:', quote);
     expect(quote).to.be.gt(0);
   });
@@ -73,8 +77,14 @@ describe('GetQuote (Mainnet Tests)', () => {
     await skipIfNotMainnet.call(this);
 
     const invalidSwapAmount = ethers.toBigInt(0); // Invalid, 0 ETH
-    await expect(
-      quoteContract.getEstimatedAmountOut(WETH9, invalidSwapAmount, DAI, 3000),
-    ).to.be.revertedWith('Amount must be > 0');
+    const tx = await quoteContract.getEstimatedAmountOut(
+      WETH9,
+      invalidSwapAmount,
+      DAI,
+      3000,
+    );
+    const receipt = await tx.wait();
+    const quote = receipt?.logs[0].data ?? 0;
+    await expect(quote).to.be.revertedWith('Amount must be > 0');
   });
 });

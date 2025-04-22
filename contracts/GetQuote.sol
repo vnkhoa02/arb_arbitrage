@@ -6,6 +6,7 @@ import '@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol';
 contract GetQuote {
     IQuoter public quoter = IQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6);
 
+    // Make this function a view so it can be called without sending a transaction
     function getEstimatedAmountOut(
         address tokenIn,
         uint256 amountIn,
