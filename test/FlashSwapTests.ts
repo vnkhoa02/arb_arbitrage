@@ -12,27 +12,7 @@ describe('FlashSwap (Mainnet Tests)', () => {
   let weth: IWETH;
   let dai: IERC20;
 
-  const isMainnet = async () => {
-    try {
-      const { chainId } = await ethers.provider.getNetwork();
-      // Chain ID = 1 (Ethereum Mainnet)
-      // Chain ID = 31337 (Hardhat Network)
-      return chainId === BigInt(1) || chainId === BigInt(31337);
-    } catch (error) {
-      console.error('Error fetching network:', error);
-      return false;
-    }
-  };
-
-  const skipIfNotMainnet = async function (this: Mocha.Context) {
-    if (!(await isMainnet())) {
-      console.log('Skipping test: not on mainnet');
-      this.skip();
-    }
-  };
-
   before(async function () {
-    await skipIfNotMainnet.call(this);
     [signer] = await ethers.getSigners();
 
     const factory = await ethers.getContractFactory('FlashSwap');
@@ -44,16 +24,12 @@ describe('FlashSwap (Mainnet Tests)', () => {
   });
 
   it('fetches latest ETH/USD price from Chainlink', async function () {
-    await skipIfNotMainnet.call(this);
-
     const price = await flashSwap.getLatestETHPrice();
     console.log('ETH/USD Price from Chainlink:', price.toString());
     expect(price).to.be.gt(0);
   });
 
   it('executes WETH → DAI swap (exact input)', async function () {
-    await skipIfNotMainnet.call(this);
-
     await weth.deposit({ value: swapAmount });
     const contractAddress = await flashSwap.getAddress();
     await weth.approve(contractAddress, swapAmount);
