@@ -10,6 +10,7 @@
     "clean": "hardhat clean",
     "compile": "hardhat clean && hardhat compile",
     "test": "npm run compile && hardhat test",
+    "test:arb": "npm run compile && hardhat test --network arbitrum",
     "deploy": "hardhat run scripts/deploy.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },

@@ -1,14 +1,14 @@
 import { expect } from 'chai';
 import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
-import { DAI, WETH9 } from '../shared/mainnet_addr';
-import { FlashSwap, IERC20, IWETH } from '../typechain-types';
+import { DAI, WETH9 } from '../shared/arbitrum/mainnet_addr';
+import { FlashSwapArb, IERC20, IWETH } from '../typechain-types';
 
 const depositAmount = ethers.parseEther('0.01');
 const swapAmount = ethers.parseEther('0.01');
 
-describe('FlashSwap (Mainnet Tests)', () => {
-  let flashSwap: FlashSwap;
+describe('FlashSwap (Arbitrum Tests)', () => {
+  let flashSwap: FlashSwapArb;
   let signer: Signer;
   let weth: IWETH;
   let dai: IERC20;
@@ -16,10 +16,10 @@ describe('FlashSwap (Mainnet Tests)', () => {
   const isMainnet = async () => {
     try {
       const { chainId } = await ethers.provider.getNetwork();
-      // Chain ID = 1 (Ethereum Mainnet)
+      // Chain ID = 42161n (Arbitrum Mainnet)
       // Chain ID = 31337 (Hardhat Network)
       console.log('Current Chain ID:', chainId);
-      return chainId === BigInt(1) || chainId === BigInt(31337);
+      return chainId === BigInt(42161) || chainId === BigInt(31337);
     } catch (error) {
       console.error('Error fetching network:', error);
       return false;
@@ -37,7 +37,7 @@ describe('FlashSwap (Mainnet Tests)', () => {
     await skipIfNotMainnet.call(this);
     [signer] = await ethers.getSigners();
 
-    const factory = await ethers.getContractFactory('FlashSwap');
+    const factory = await ethers.getContractFactory('FlashSwapArb');
     flashSwap = await factory.deploy();
     await flashSwap.waitForDeployment();
 
