@@ -4,6 +4,9 @@ import { ethers } from 'hardhat';
 import { DAI, WETH9 } from '../shared/mainnet_addr';
 import { FlashSwap, IERC20, IWETH } from '../typechain-types';
 
+const depositAmount = ethers.parseEther('0.01'); // 0.01 ETH
+const swapAmount = ethers.parseEther('0.01');
+
 describe('FlashSwap Tests', () => {
   let flashSwap: FlashSwap;
   let signer: Signer;
@@ -32,13 +35,11 @@ describe('FlashSwap Tests', () => {
   });
 
   it('swapExactInputSingle', async () => {
-    const amountIn = ethers.parseEther('0.1'); // 1 WETH
-
-    await weth.deposit({ value: amountIn });
+    await weth.deposit({ value: swapAmount });
     const address = await flashSwap.getAddress();
-    await weth.approve(address, amountIn);
+    await weth.approve(address, swapAmount);
 
-    await flashSwap.swapExactInputSingle(amountIn);
+    await flashSwap.swapExactInputSingle(swapAmount);
 
     const balance = await dai.balanceOf(await signer.getAddress());
     console.log('DAI balance after swapExactInputSingle:', balance.toString());
@@ -46,8 +47,7 @@ describe('FlashSwap Tests', () => {
   });
 
   it('should return the correct contract balance using getBalance', async () => {
-    // Send 1 ETH to the contract
-    const depositAmount = ethers.parseEther('1');
+    // Send x ETH to the contract
     const address = await flashSwap.getAddress();
 
     await signer.sendTransaction({
