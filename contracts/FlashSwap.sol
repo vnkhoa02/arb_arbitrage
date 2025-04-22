@@ -13,14 +13,14 @@ contract FlashSwap {
         0xE592427A0AEce92De3Edee1F18E0157C05861564;
     ISwapRouter public constant swapRouter = ISwapRouter(UNISWAP_V3_ROUTER);
     address private constant CHAINLINK_ETH_USD_FEED =
-        0x694AA1769357215DE4FAC081bf1f309aDC325306;
+        0x694AA1769357215DE4FAC081bf1f309aDC325306; // Sepolia Testnet
+    AggregatorV3Interface internal priceFeed =
+        AggregatorV3Interface(CHAINLINK_ETH_USD_FEED);
+
     address private constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F; // DAI Mainnet
     address private constant WETH9 = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // WETH Mainnet
     uint256 private constant MIN_SWAP_USD = 5 * 10 ** 8; // $5 in 8 decimals
     uint256 private constant SLIPPAGE_BPS = 100; // 1% slippage (basis points)
-
-    AggregatorV3Interface internal priceFeed =
-        AggregatorV3Interface(CHAINLINK_ETH_USD_FEED);
 
     address public owner;
 
@@ -55,17 +55,15 @@ contract FlashSwap {
             .ExactInputSingleParams({
                 tokenIn: WETH9,
                 tokenOut: DAI,
-                // pool fee 0.3%
+                //  0.3% fee,
                 fee: 3000,
                 recipient: msg.sender,
                 deadline: block.timestamp,
                 amountIn: amountIn,
                 amountOutMinimum: 0,
-                // NOTE: In production, this value can be used to set the limit
-                // for the price the swap will push the pool to,
-                // which can help protect against price impact
                 sqrtPriceLimitX96: 0
             });
+
         amountOut = swapRouter.exactInputSingle(params);
     }
 

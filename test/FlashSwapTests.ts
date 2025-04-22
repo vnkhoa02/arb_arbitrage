@@ -1,9 +1,8 @@
+import { expect } from 'chai';
 import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 import { FlashSwap, IERC20, IWETH } from '../typechain-types';
-
-const DAI = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
-const WETH9 = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+import { WETH9, DAI } from '../shared/mainnet_addr';
 
 describe('FlashSwap Tests', () => {
   let flashSwap: FlashSwap;
@@ -12,71 +11,47 @@ describe('FlashSwap Tests', () => {
   let dai: IERC20;
 
   before(async () => {
+    // Get the deployer account
     const [deployer] = await ethers.getSigners();
     signer = deployer;
 
+    // Deploy the FlashSwap contract
     const flashSwapFactory = await ethers.getContractFactory('FlashSwap');
     flashSwap = await flashSwapFactory.deploy();
     await flashSwap.waitForDeployment();
 
+    // Get contract instances for WETH and DAI
     weth = (await ethers.getContractAt('IWETH', WETH9)) as IWETH;
     dai = (await ethers.getContractAt('IERC20', DAI)) as IERC20;
   });
 
-  it('swapExactInputSingle', async () => {
-    const amountIn = ethers.parseEther('0.1'); // 1 WETH
+  it('should return the latest ETH price from Chainlink', async () => {
+    // Fetch the latest ETH price from Chainlink
+    const ethPrice = await flashSwap.getLatestETHPrice();
+    console.log('ETH Price:', ethPrice.toString());
 
-    await weth.deposit({ value: amountIn });
-    const address = await flashSwap.getAddress();
-    await weth.approve(address, amountIn);
-
-    await flashSwap.swapExactInputSingle(amountIn);
-
-    const balance = await dai.balanceOf(await signer.getAddress());
-    console.log('DAI balance after swapExactInputSingle:', balance.toString());
+    // Ensure the price is greater than 0
+    expect(ethPrice).to.be.gt(0);
   });
 
-  // it('swapExactOutputSingle', async () => {
-  //   const wethAmountInMax = ethers.utils.parseEther('1');
-  //   const daiAmountOut = ethers.utils.parseUnits('100', 18);
+  it('should perform a single token swap (WETH to DAI)', async () => {
+    const amountIn = ethers.parseEther('0.1'); // Amount of WETH to swap (0.1 WETH)
+    // Deposit ETH and wrap it into WETH
+    await weth.deposit({ value: amountIn });
 
-  //   await weth.deposit({ value: wethAmountInMax });
-  //   await weth.approve(flashSwap.address, wethAmountInMax);
+    // Approve the FlashSwap contract to spend WETH
+    const flashSwapAddress = await flashSwap.getAddress();
+    await weth.approve(flashSwapAddress, amountIn);
 
-  //   await flashSwap.swapExactOutputSingle(daiAmountOut, wethAmountInMax);
+    // Perform the swap
+    await flashSwap.swapExactInputSingle(amountIn);
 
-  //   const balance = await dai.balanceOf(await signer.getAddress());
-  //   console.log('DAI balance after swapExactOutputSingle:', balance.toString());
-  // });
-
-  // it('swapExactInputMultihop', async () => {
-  //   const amountIn = ethers.utils.parseEther('1');
-
-  //   await weth.deposit({ value: amountIn });
-  //   await weth.approve(flashSwap.address, amountIn);
-
-  //   await flashSwap.swapExactInputMultihop(amountIn);
-
-  //   const balance = await dai.balanceOf(await signer.getAddress());
-  //   console.log(
-  //     'DAI balance after swapExactInputMultihop:',
-  //     balance.toString(),
-  //   );
-  // });
-
-  // it('swapExactOutputMultihop', async () => {
-  //   const wethAmountInMax = ethers.utils.parseEther('1');
-  //   const daiAmountOut = ethers.utils.parseUnits('100', 18);
-
-  //   await weth.deposit({ value: wethAmountInMax });
-  //   await weth.approve(flashSwap.address, wethAmountInMax);
-
-  //   await flashSwap.swapExactOutputMultihop(daiAmountOut, wethAmountInMax);
-
-  //   const balance = await dai.balanceOf(await signer.getAddress());
-  //   console.log(
-  //     'DAI balance after swapExactOutputMultihop:',
-  //     balance.toString(),
-  //   );
-  // });
+    // Check the DAI balance after the swap
+    const daiBalance = await dai.balanceOf(await signer.getAddress());
+    console.log(
+      'DAI balance after swapExactInputSingle:',
+      daiBalance.toString(),
+    );
+    expect(daiBalance).to.be.gt(0); // Ensure DAI balance increased
+  });
 });
