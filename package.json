@@ -7,9 +7,10 @@
   "license": "UNLICENSED",
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "hh:deploy": "hardhat run scripts/deploy.ts",
-    "hh:compile": "hardhat clean && hardhat compile",
-    "hh:test": "npm run hh:compile && hardhat test",
+    "clean": "hardhat clean",
+    "compile": "hardhat clean && hardhat compile",
+    "test": "npm run compile && hardhat test",
+    "deploy": "hardhat run scripts/deploy.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "dependencies": {

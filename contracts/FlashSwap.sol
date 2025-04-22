@@ -6,14 +6,14 @@ import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import {AggregatorV3Interface} from '@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol';
-import 'hardhat/console.sol'; // Add this line
+import 'hardhat/console.sol';
 
 contract FlashSwap {
     address private constant UNISWAP_V3_ROUTER =
         0xE592427A0AEce92De3Edee1F18E0157C05861564;
     ISwapRouter public constant swapRouter = ISwapRouter(UNISWAP_V3_ROUTER);
     address private constant CHAINLINK_ETH_USD_FEED =
-        0x694AA1769357215DE4FAC081bf1f309aDC325306; // Sepolia Testnet
+        0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419; // Mainnet ETH/USD
     AggregatorV3Interface internal priceFeed =
         AggregatorV3Interface(CHAINLINK_ETH_USD_FEED);
 
@@ -55,12 +55,15 @@ contract FlashSwap {
             .ExactInputSingleParams({
                 tokenIn: WETH9,
                 tokenOut: DAI,
-                //  0.3% fee,
+                // pool fee 0.3%
                 fee: 3000,
                 recipient: msg.sender,
                 deadline: block.timestamp,
                 amountIn: amountIn,
                 amountOutMinimum: 0,
+                // NOTE: In production, this value can be used to set the limit
+                // for the price the swap will push the pool to,
+                // which can help protect against price impact
                 sqrtPriceLimitX96: 0
             });
 

@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
+import { DAI, WETH9 } from '../shared/mainnet_addr';
 import { FlashSwap, IERC20, IWETH } from '../typechain-types';
-import { WETH9, DAI } from '../shared/mainnet_addr';
 
 describe('FlashSwap Tests', () => {
   let flashSwap: FlashSwap;
@@ -11,16 +11,13 @@ describe('FlashSwap Tests', () => {
   let dai: IERC20;
 
   before(async () => {
-    // Get the deployer account
     const [deployer] = await ethers.getSigners();
     signer = deployer;
 
-    // Deploy the FlashSwap contract
     const flashSwapFactory = await ethers.getContractFactory('FlashSwap');
     flashSwap = await flashSwapFactory.deploy();
     await flashSwap.waitForDeployment();
 
-    // Get contract instances for WETH and DAI
     weth = (await ethers.getContractAt('IWETH', WETH9)) as IWETH;
     dai = (await ethers.getContractAt('IERC20', DAI)) as IERC20;
   });
@@ -34,24 +31,33 @@ describe('FlashSwap Tests', () => {
     expect(ethPrice).to.be.gt(0);
   });
 
-  it('should perform a single token swap (WETH to DAI)', async () => {
-    const amountIn = ethers.parseEther('0.1'); // Amount of WETH to swap (0.1 WETH)
-    // Deposit ETH and wrap it into WETH
+  it('swapExactInputSingle', async () => {
+    const amountIn = ethers.parseEther('0.1'); // 1 WETH
+
     await weth.deposit({ value: amountIn });
+    const address = await flashSwap.getAddress();
+    await weth.approve(address, amountIn);
 
-    // Approve the FlashSwap contract to spend WETH
-    const flashSwapAddress = await flashSwap.getAddress();
-    await weth.approve(flashSwapAddress, amountIn);
-
-    // Perform the swap
     await flashSwap.swapExactInputSingle(amountIn);
 
-    // Check the DAI balance after the swap
-    const daiBalance = await dai.balanceOf(await signer.getAddress());
-    console.log(
-      'DAI balance after swapExactInputSingle:',
-      daiBalance.toString(),
-    );
-    expect(daiBalance).to.be.gt(0); // Ensure DAI balance increased
+    const balance = await dai.balanceOf(await signer.getAddress());
+    console.log('DAI balance after swapExactInputSingle:', balance.toString());
+    expect(balance).to.be.gt(0);
+  });
+
+  it('should return the correct contract balance using getBalance', async () => {
+    // Send 1 ETH to the contract
+    const depositAmount = ethers.parseEther('1');
+    const address = await flashSwap.getAddress();
+
+    await signer.sendTransaction({
+      to: address,
+      value: depositAmount,
+    });
+
+    // Check the contract balance using getBalance
+    const contractBalance = await flashSwap.getBalance();
+    console.log('Contract Balance:', ethers.formatEther(contractBalance));
+    expect(contractBalance).to.equal(depositAmount);
   });
 });

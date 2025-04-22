@@ -6,20 +6,12 @@ import '@nomicfoundation/hardhat-chai-matchers';
 import type { HardhatUserConfig } from 'hardhat/config';
 
 const config: HardhatUserConfig = {
-  defaultNetwork: 'sepolia',
-  solidity: {
-    version: '0.8.28',
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
-      },
-    },
-  },
+  solidity: '0.8.28',
   networks: {
     hardhat: {
       forking: {
         url: process.env.INFURA_MAINNET_URL as string,
+        blockNumber: 22323681, // 22/04/2025
       },
     },
     sepolia: {
