@@ -20,17 +20,6 @@ contract FlashSwap {
     address private constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F; // DAI Mainnet
     address private constant WETH9 = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // WETH Mainnet
 
-    address public owner;
-
-    constructor() {
-        owner = msg.sender;
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, 'Not the contract owner');
-        _;
-    }
-
     function getLatestETHPrice() public view returns (uint256) {
         (, int256 price, , , ) = priceFeed.latestRoundData();
         require(price > 0, 'Invalid price');
@@ -67,16 +56,4 @@ contract FlashSwap {
 
         amountOut = swapRouter.exactInputSingle(params);
     }
-
-    function getBalance() external view returns (uint256) {
-        return address(this).balance;
-    }
-
-    function withdraw() external onlyOwner {
-        uint256 balance = address(this).balance;
-        require(balance > 0, 'No funds to withdraw');
-        payable(owner).transfer(balance);
-    }
-
-    receive() external payable {}
 }

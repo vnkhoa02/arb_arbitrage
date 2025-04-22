@@ -22,6 +22,10 @@ const config: HardhatUserConfig = {
       url: process.env.INFURA_ARB_MAINNET_URL,
       accounts: [],
     },
+    arbitrumSepolia: {
+      url: process.env.INFURA_ARB_SEPOLIA_URL,
+      accounts: [],
+    },
   },
 };
 

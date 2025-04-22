@@ -4,7 +4,6 @@ import { ethers } from 'hardhat';
 import { DAI, WETH9 } from '../shared/mainnet_addr';
 import { FlashSwap, IERC20, IWETH } from '../typechain-types';
 
-const depositAmount = ethers.parseEther('0.01');
 const swapAmount = ethers.parseEther('0.01');
 
 describe('FlashSwap (Mainnet Tests)', () => {
@@ -18,7 +17,6 @@ describe('FlashSwap (Mainnet Tests)', () => {
       const { chainId } = await ethers.provider.getNetwork();
       // Chain ID = 1 (Ethereum Mainnet)
       // Chain ID = 31337 (Hardhat Network)
-      console.log('Current Chain ID:', chainId);
       return chainId === BigInt(1) || chainId === BigInt(31337);
     } catch (error) {
       console.error('Error fetching network:', error);
@@ -65,19 +63,5 @@ describe('FlashSwap (Mainnet Tests)', () => {
     const daiBalance = await dai.balanceOf(await signer.getAddress());
     console.log('DAI balance after swap:', ethers.formatUnits(daiBalance, 18));
     expect(daiBalance).to.be.gt(0);
-  });
-
-  it('receives ETH and tracks contract balance', async function () {
-    await skipIfNotMainnet.call(this);
-
-    const contractAddress = await flashSwap.getAddress();
-    await signer.sendTransaction({
-      to: contractAddress,
-      value: depositAmount,
-    });
-
-    const balance = await flashSwap.getBalance();
-    console.log('Contract ETH Balance:', ethers.formatEther(balance));
-    expect(balance).to.equal(depositAmount);
   });
 });
