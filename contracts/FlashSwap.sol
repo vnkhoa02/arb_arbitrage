@@ -12,14 +12,10 @@ contract FlashSwap {
     address private constant UNISWAP_V3_ROUTER =
         0xE592427A0AEce92De3Edee1F18E0157C05861564;
     ISwapRouter public constant swapRouter = ISwapRouter(UNISWAP_V3_ROUTER);
-
     address private constant CHAINLINK_ETH_USD_FEED =
         0x694AA1769357215DE4FAC081bf1f309aDC325306;
-    address private constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address private constant WETH9 = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address private constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-
-    // NOTE: Does not work with SwapRouter02
+    address private constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F; // DAI Mainnet
+    address private constant WETH9 = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // WETH Mainnet
     uint256 private constant MIN_SWAP_USD = 5 * 10 ** 8; // $5 in 8 decimals
     uint256 private constant SLIPPAGE_BPS = 100; // 1% slippage (basis points)
 
@@ -71,11 +67,6 @@ contract FlashSwap {
                 sqrtPriceLimitX96: 0
             });
         amountOut = swapRouter.exactInputSingle(params);
-        console.log(
-            'swapExactInputSingle: %s WETH -> %s DAI',
-            amountIn,
-            amountOut
-        );
     }
 
     function getBalance() external view returns (uint256) {

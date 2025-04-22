@@ -4,14 +4,12 @@ import { FlashSwap, IERC20, IWETH } from '../typechain-types';
 
 const DAI = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
 const WETH9 = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
-const USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
 
 describe('FlashSwap Tests', () => {
   let flashSwap: FlashSwap;
   let signer: Signer;
   let weth: IWETH;
   let dai: IERC20;
-  let usdc: IERC20;
 
   before(async () => {
     const [deployer] = await ethers.getSigners();
@@ -23,7 +21,6 @@ describe('FlashSwap Tests', () => {
 
     weth = (await ethers.getContractAt('IWETH', WETH9)) as IWETH;
     dai = (await ethers.getContractAt('IERC20', DAI)) as IERC20;
-    usdc = (await ethers.getContractAt('IERC20', USDC)) as IERC20;
   });
 
   it('swapExactInputSingle', async () => {

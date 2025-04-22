@@ -8,8 +8,8 @@
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "hh:deploy": "hardhat run scripts/deploy.ts",
-    "hh:test": "hardhat test",
     "hh:compile": "hardhat compile",
+    "hh:test": "npm run hh:compile && hardhat test",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "dependencies": {
