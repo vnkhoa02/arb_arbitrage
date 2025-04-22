@@ -11,13 +11,17 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: process.env.INFURA_MAINNET_URL as string,
-        blockNumber: 22323681, // 22/04/2025
+        blockNumber: 22323681,
       },
     },
-    // sepolia: {
-    //   url: process.env.INFURA_SEPOLIA_URL,
-    //   accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-    // },
+    sepolia: {
+      url: process.env.INFURA_SEPOLIA_URL,
+      accounts: [],
+    },
+    arbitrum: {
+      url: process.env.INFURA_ARB_MAINNET_URL,
+      accounts: [],
+    },
   },
 };
 

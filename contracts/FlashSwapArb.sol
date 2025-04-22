@@ -8,17 +8,17 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import {AggregatorV3Interface} from '@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol';
 import 'hardhat/console.sol';
 
-contract FlashSwap {
+contract FlashSwapArb {
     address private constant UNISWAP_V3_ROUTER =
         0xE592427A0AEce92De3Edee1F18E0157C05861564;
     ISwapRouter public constant swapRouter = ISwapRouter(UNISWAP_V3_ROUTER);
     address private constant CHAINLINK_ETH_USD_FEED =
-        0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419; // Mainnet ETH/USD
+        0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612; // Mainnet ETH/USD
     AggregatorV3Interface internal priceFeed =
         AggregatorV3Interface(CHAINLINK_ETH_USD_FEED);
 
-    address private constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F; // DAI Mainnet
-    address private constant WETH9 = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // WETH Mainnet
+    address private constant DAI = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1; // DAI Mainnet
+    address private constant WETH9 = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // WETH Mainnet
 
     address public owner;
 
