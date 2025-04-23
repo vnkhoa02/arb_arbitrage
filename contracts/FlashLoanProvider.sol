@@ -60,15 +60,6 @@ abstract contract FlashLoanProvider is IFlashLoanRecipient {
                 feeAmounts[i],
                 userData
             );
-            uint256 totalRepayment = amounts[i] + feeAmounts[i];
-            console.log(
-                'FlashLoanProvider: Repaying %s + %s = %s',
-                amounts[i],
-                feeAmounts[i],
-                totalRepayment
-            );
-            // Execute the operation
-            tokens[i].transfer(VAULT_ADDRESS, totalRepayment);
         }
     }
 

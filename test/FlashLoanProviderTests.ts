@@ -29,6 +29,14 @@ describe('FlashLoanProvider Tests', function () {
     );
   });
 
+  it('prevents non-owner from calling testFlashLoan()', async function () {
+    // pick any other signer
+    const nonOwner = (await ethers.getSigners())[1];
+    await expect(
+      mock.connect(nonOwner).testFlashLoan([WETH9], [0], '0x'),
+    ).to.be.revertedWith('Not owner');
+  });
+
   it('allows the owner to initiate a flash loan via testFlashLoan()', async function () {
     const tokens = [WETH9];
     const amounts = [ethers.parseEther('0.05')];
@@ -38,11 +46,15 @@ describe('FlashLoanProvider Tests', function () {
       .be.reverted;
   });
 
-  it('prevents non-owner from calling testFlashLoan()', async function () {
-    // pick any other signer
-    const nonOwner = (await ethers.getSigners())[1];
-    await expect(
-      mock.connect(nonOwner).testFlashLoan([WETH9], [0], '0x'),
-    ).to.be.revertedWith('Not owner');
+  it('reverts when loan is not repaid in full', async function () {
+    const tokens = [WETH9];
+    const amounts = [ethers.parseEther('0.05')];
+    const ud = '0xdeadbeef';
+
+    // Tell the mock to underpay on purpose
+    await mock.connect(owner).setSimulateDefault(false);
+
+    expect(mock.connect(owner).testFlashLoan(tokens, amounts, ud)).to.be
+      .reverted;
   });
 });

@@ -5,13 +5,11 @@ import '../FlashLoanProvider.sol';
 import 'hardhat/console.sol';
 
 contract FlashLoanProviderMock is FlashLoanProvider {
-    /// @notice Emitted when the hook is called
-    event Executed(
-        address indexed token,
-        uint256 amount,
-        uint256 fee,
-        bytes userData
-    );
+    bool public simulateDefault = true;
+
+    function setSimulateDefault(bool value) external {
+        simulateDefault = value;
+    }
 
     /// @notice allow us to call customFlashLoan from tests
     function testFlashLoan(
@@ -22,17 +20,19 @@ contract FlashLoanProviderMock is FlashLoanProvider {
         flashLoan(tokens, amounts, userData);
     }
 
-    /// @dev override the abstract hook and emit an event
     function _executeOperation(
         address token,
         uint256 amount,
         uint256 fee,
-        bytes memory userData
+        bytes memory /* userData */
     ) internal override {
-        // Do something with the flash loaned tokens
-        // log the received data
         console.log('Received flash loan:', token, amount, fee);
-        // Emit an event for testing
-        emit Executed(token, amount, fee, userData);
+        if (simulateDefault) {
+            IERC20(token).transfer(VAULT_ADDRESS, amount + fee); // full repayment
+        } else {
+            amount = amount + fee - 100; // simulate underpayment
+            console.log('Simulating underpayment:', amount);
+            IERC20(token).transfer(VAULT_ADDRESS, amount); // intentionally underpay
+        }
     }
 }
