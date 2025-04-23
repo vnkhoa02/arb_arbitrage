@@ -2,6 +2,7 @@
 pragma solidity ^0.8.28;
 
 import '../FlashLoanProvider.sol';
+import 'hardhat/console.sol';
 
 contract FlashLoanProviderMock is FlashLoanProvider {
     /// @notice Emitted when the hook is called
@@ -28,6 +29,10 @@ contract FlashLoanProviderMock is FlashLoanProvider {
         uint256 fee,
         bytes memory userData
     ) internal override {
+        // Do something with the flash loaned tokens
+        // log the received data
+        console.log('Received flash loan:', token, amount, fee);
+        // Emit an event for testing
         emit Executed(token, amount, fee, userData);
     }
 }
