@@ -1,6 +1,6 @@
 import { ethers, toBigInt } from 'ethers';
-import { UNISWAP_QUOTER } from '../shared/mainnet_addr';
-import { provider } from './helpers/provider';
+import { UNISWAP_QUOTER } from '../../shared/mainnet_addr';
+import { provider } from './provider';
 
 /**
  * Get a quote for a token swap using the Uniswap Quoter contract.

@@ -1,14 +1,13 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { getQuote } from '../scripts/getQuote';
+import { getQuote } from '../scripts/helpers/getQuote';
 import { USDT, WETH9 } from '../shared/mainnet_addr';
 import { Arbitrage } from '../typechain-types';
 
 describe('Arbitrage Tests', () => {
+  const ETH_BORROW_AMOUNT = 10; // 10 ETH
   let Arbitrage: Arbitrage;
   let owner: any;
-
-  const BORROW_AMOUNT = ethers.parseEther('10'); // 10 WETH
 
   before(async () => {
     [owner] = await ethers.getSigners();
@@ -31,8 +30,8 @@ describe('Arbitrage Tests', () => {
   it('simpleArbitrage', async () => {
     const feeTiers = { low: 500, high: 3000 };
     const prices = await Promise.all([
-      quote(WETH9, USDT, BORROW_AMOUNT.toString(), feeTiers.low),
-      quote(WETH9, USDT, BORROW_AMOUNT.toString(), feeTiers.high),
+      quote(WETH9, USDT, ETH_BORROW_AMOUNT.toString(), feeTiers.low),
+      quote(WETH9, USDT, ETH_BORROW_AMOUNT.toString(), feeTiers.high),
     ]);
     console.log('Calling simpleArbitrage...', {
       lowFee: feeTiers.low,
@@ -45,9 +44,9 @@ describe('Arbitrage Tests', () => {
       WETH9,
       feeTiers.low,
       feeTiers.high,
-      prices[0],
-      prices[1],
-      BORROW_AMOUNT,
+      ethers.parseUnits(prices[0], 18),
+      ethers.parseUnits(prices[1], 18),
+      ethers.parseEther(ETH_BORROW_AMOUNT.toString()),
     );
     await tx.wait();
 
