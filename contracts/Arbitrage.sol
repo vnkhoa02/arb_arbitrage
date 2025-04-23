@@ -60,18 +60,22 @@ contract Arbitrage is FlashLoanProvider {
             );
 
         uint256 expectedOut = 0;
-        uint256 usdtAmount;
-        uint256 finalOut;
 
         // Forward swap
         TransferHelper.safeApprove(tokenIn, address(swapRouter), amount);
-        expectedOut = (forwardPrice * amount) / 1e18; // now in USDT (1e18 → 1e18 cancels)
-        usdtAmount = _swap(tokenIn, tokenOut, forwardFee, amount, expectedOut);
+        expectedOut = (forwardPrice * amount) / 1e18;
+        uint256 usdtAmount = _swap(
+            tokenIn,
+            tokenOut,
+            forwardFee,
+            amount,
+            expectedOut
+        );
 
         // Backward swap
         TransferHelper.safeApprove(tokenOut, address(swapRouter), usdtAmount);
-        expectedOut = (backwardPrice * usdtAmount) / 1e18; // now in tokenIn (1e18 → 1e18 cancels)
-        finalOut = _swap(
+        expectedOut = backwardPrice * usdtAmount;
+        uint256 finalOut = _swap(
             tokenOut,
             tokenIn,
             backwardFee,
@@ -98,6 +102,13 @@ contract Arbitrage is FlashLoanProvider {
         uint256 amountIn,
         uint256 amountOutMinimum
     ) internal returns (uint256) {
+        console.log('AmountIn: %s', amountIn);
+        console.log(
+            'Swapping %s for %s %s',
+            tokenIn,
+            amountOutMinimum,
+            tokenOut
+        );
         return
             swapRouter.exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
@@ -105,7 +116,7 @@ contract Arbitrage is FlashLoanProvider {
                     tokenOut: tokenOut,
                     fee: fee,
                     recipient: address(this),
-                    deadline: block.timestamp,
+                    deadline: block.timestamp + 15, // seconds
                     amountIn: amountIn,
                     amountOutMinimum: amountOutMinimum,
                     sqrtPriceLimitX96: 0

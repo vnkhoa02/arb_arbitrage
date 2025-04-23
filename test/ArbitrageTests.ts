@@ -4,8 +4,8 @@ import { findBestPath } from '../scripts/helpers/getQuote';
 import { USDT, WETH9 } from '../shared/mainnet_addr';
 import { Arbitrage } from '../typechain-types';
 
-describe('Arbitrage Tests', () => {
-  const ETH_BORROW_AMOUNT = 10; // 10 ETH
+describe.only('Arbitrage Tests', () => {
+  const ETH_BORROW_AMOUNT = 1; // 1 ETH
   let arbitrage: Arbitrage;
   let owner: any;
 
@@ -32,10 +32,10 @@ describe('Arbitrage Tests', () => {
     const tx = await arbitrage.connect(owner).simpleArbitrage(
       WETH9, // tokenIn
       USDT, // tokenOut
-      path.forward.buyFee, // forwardFee
-      path.backward.sellFee, // backwardFee
-      ethers.parseUnits(String(path.forward.buyPrice), 18), // forwardPrice (scaled to 1e18)
-      ethers.parseUnits(String(path.backward.sellPrice), 6), // backwardPrice (USDT is 6 decimals)
+      path.forward.fee, // forwardFee
+      path.backward.fee, // backwardFee
+      ethers.parseUnits(String(path.forward.price), 18), // forwardPrice (scaled to 1e18)
+      ethers.parseUnits(Number(path.backward.price).toFixed(6), 6), // backwardPrice (scaled to 1e6)
       ethers.parseEther(ETH_BORROW_AMOUNT.toString()), // borrowAmount
     );
     await tx.wait();
