@@ -4,34 +4,23 @@ pragma solidity ^0.8.28;
 import 'hardhat/console.sol';
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
-import '@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol';
 
 import {FlashLoanProvider} from './FlashLoanProvider.sol';
 
 contract Arbitrage is FlashLoanProvider {
-    IQuoter public quoter = IQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6);
     ISwapRouter public constant swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-
-    uint24 private feeLow;
-    uint24 private feeHigh;
-    bool private isLowFirst;
 
     function simpleArbitrage(
         address tokenIn,
         address tokenOut,
-        uint24 _buyFee,
-        uint24 _sellFee,
-        uint256 buyPrice,
-        uint256 sellPrice,
+        uint24 forwardFee,
+        uint24 backwardFee,
+        uint256 forwardPrice,
+        uint256 backwardPrice,
         uint256 borrowAmount
     ) external onlyOwner {
         require(borrowAmount > 0, 'Invalid amount');
-        require(buyPrice != sellPrice, 'No arbitrage opportunity');
-
-        isLowFirst = buyPrice < sellPrice;
-        feeLow = _buyFee;
-        feeHigh = _sellFee;
 
         address[] memory tokens = new address[](1);
         tokens[0] = tokenIn;
@@ -42,8 +31,10 @@ contract Arbitrage is FlashLoanProvider {
         bytes memory userData = abi.encode(
             tokenIn,
             tokenOut,
-            buyPrice,
-            sellPrice
+            forwardFee,
+            backwardFee,
+            forwardPrice,
+            backwardPrice
         );
 
         flashLoan(tokens, amounts, userData);
@@ -59,34 +50,33 @@ contract Arbitrage is FlashLoanProvider {
         (
             address tokenIn,
             address tokenOut,
-            uint256 buyPrice,
-            uint256 sellPrice
-        ) = abi.decode(userData, (address, address, uint256, uint256));
+            uint24 forwardFee,
+            uint24 backwardFee,
+            uint256 forwardPrice,
+            uint256 backwardPrice
+        ) = abi.decode(
+                userData,
+                (address, address, uint24, uint24, uint256, uint256)
+            );
 
-        uint256 amountOutMinimum;
+        uint256 expectedOut = 0;
         uint256 usdtAmount;
         uint256 finalOut;
 
-        // First swap
+        // Forward swap
         TransferHelper.safeApprove(tokenIn, address(swapRouter), amount);
-        amountOutMinimum = (buyPrice * amount) / 1e18;
-        usdtAmount = _swap(
-            tokenIn,
-            tokenOut,
-            isLowFirst ? feeLow : feeHigh,
-            amount,
-            amountOutMinimum
-        );
+        expectedOut = (forwardPrice * amount) / 1e18; // now in USDT (1e18 → 1e18 cancels)
+        usdtAmount = _swap(tokenIn, tokenOut, forwardFee, amount, expectedOut);
 
-        // Second swap
+        // Backward swap
         TransferHelper.safeApprove(tokenOut, address(swapRouter), usdtAmount);
-        amountOutMinimum = (sellPrice * amount) / 1e18;
+        expectedOut = (backwardPrice * usdtAmount) / 1e18; // now in tokenIn (1e18 → 1e18 cancels)
         finalOut = _swap(
             tokenOut,
             tokenIn,
-            isLowFirst ? feeHigh : feeLow,
+            backwardFee,
             usdtAmount,
-            amountOutMinimum
+            expectedOut
         );
 
         console.log(

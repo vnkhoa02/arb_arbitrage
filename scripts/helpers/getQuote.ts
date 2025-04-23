@@ -54,7 +54,6 @@ export async function findBestPath(
   tokenOut: string,
 ) {
   const url = `http://localhost:3000/dex/arbitrage?amountIn=${amountIn}&tokenIn=${tokenIn}&tokenOut=${tokenOut}`;
-  console.log('Fetching path from:', url);
   const path = axios.get<ArbPath>(url);
   const { data } = await path;
   return data;
