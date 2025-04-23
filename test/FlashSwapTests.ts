@@ -1,43 +1,47 @@
 import { expect } from 'chai';
-import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
-import { DAI, WETH9 } from '../shared/mainnet_addr';
-import { FlashSwap, IERC20, IWETH } from '../typechain-types';
+import { Arbitrage, IWETH, IERC20 } from '../typechain-types';
+import { WETH9 } from '../shared/mainnet_addr';
 
-const swapAmount = ethers.parseEther('0.01');
-
-describe('FlashSwap (Mainnet Tests)', () => {
-  let flashSwap: FlashSwap;
-  let signer: Signer;
+describe('Arbitrage (Mainnet Fork)', () => {
+  let Arbitrage: Arbitrage;
   let weth: IWETH;
-  let dai: IERC20;
+  let USDT: IERC20;
+  let owner: any;
+  let user: any;
 
-  before(async function () {
-    [signer] = await ethers.getSigners();
+  // we’ll borrow/swapping small amounts to keep gas reasonable
+  const BORROW_AMOUNT = ethers.parseEther('0.1');
 
-    const factory = await ethers.getContractFactory('FlashSwap');
-    flashSwap = await factory.deploy();
-    await flashSwap.waitForDeployment();
+  before(async () => {
+    [owner, user] = await ethers.getSigners();
+    // Deploy your strategy
+    const Factory = await ethers.getContractFactory('Arbitrage', owner);
+    Arbitrage = (await Factory.deploy()) as Arbitrage;
+    await Arbitrage.waitForDeployment();
 
+    // Get real WETH & USDT on Mainnet
     weth = (await ethers.getContractAt('IWETH', WETH9)) as IWETH;
-    dai = (await ethers.getContractAt('IERC20', DAI)) as IERC20;
+    USDT = (await ethers.getContractAt('IERC20', USDT)) as IERC20;
   });
 
-  it('fetches latest ETH/USD price from Chainlink', async function () {
-    const price = await flashSwap.getLatestETHPrice();
-    console.log('ETH/USD Price from Chainlink:', price.toString());
-    expect(price).to.be.gt(0);
-  });
+  it('simpleArbitrage: should not revert & state vars set', async () => {
+    // Call simpleArbitrage as owner
+    await expect(
+      Arbitrage.connect(owner).simpleArbitrage(
+        WETH9,
+        3000, // low-fee tier
+        0, // low-fee pool price (dummy)
+        10000, // high-fee tier
+        0, // high-fee pool price (dummy)
+        BORROW_AMOUNT, // borrow 0.1 WETH
+      ),
+    ).to.not.be.reverted;
 
-  it('executes WETH → DAI swap (exact input)', async function () {
-    await weth.deposit({ value: swapAmount });
-    const contractAddress = await flashSwap.getAddress();
-    await weth.approve(contractAddress, swapAmount);
-
-    await flashSwap.swapExactInputSingle(swapAmount);
-
-    const daiBalance = await dai.balanceOf(await signer.getAddress());
-    console.log('DAI balance after swap:', ethers.formatUnits(daiBalance, 18));
-    expect(daiBalance).to.be.gt(0);
+    // Confirm state variables were updated
+    expect(await Arbitrage.poolFeeLow()).to.equal(3000);
+    expect(await Arbitrage.poolFeeLowPrice()).to.equal(0);
+    expect(await Arbitrage.poolFeeHigh()).to.equal(10000);
+    expect(await Arbitrage.poolFeeHighPrice()).to.equal(0);
   });
 });
