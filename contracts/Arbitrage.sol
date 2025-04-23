@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
+
 import 'hardhat/console.sol';
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
@@ -7,132 +8,98 @@ import {FlashLoanProvider} from './FlashLoanProvider.sol';
 
 contract Arbitrage is FlashLoanProvider {
     address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    uint24 public poolFeeLow;
-    uint256 public poolFeeLowPrice;
-    uint24 public poolFeeHigh;
-    uint256 public poolFeeHighPrice;
-
-    // — Uniswap V3 Router (mainnet)
     ISwapRouter public constant swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
-    /**
-     * @notice Starts arbitrage by borrowing WETH via flash loan,
-     *         then swaps through two Uniswap V3 pools.
-     * @param _poolFeeLow The fee tier for the first swap (e.g., 3000)
-     * @param _poolFeeHigh The fee tier for the second swap (e.g., 10000)
-     * @param borrowAmount Amount of WETH to borrow
-     */
+    uint24 private feeLow;
+    uint24 private feeHigh;
+    bool private isLowFirst;
+
     function simpleArbitrage(
         address tokenIn,
-        uint24 _poolFeeLow,
-        uint256 _poolFeeLowPrice,
-        uint24 _poolFeeHigh,
-        uint256 _poolFeeHighPrice,
+        uint24 _feeLow,
+        uint24 _feeHigh,
+        uint256 priceLow,
+        uint256 priceHigh,
         uint256 borrowAmount
     ) external onlyOwner {
-        poolFeeLow = _poolFeeLow;
-        poolFeeLowPrice = _poolFeeLowPrice;
-        poolFeeHigh = _poolFeeHigh;
-        poolFeeHighPrice = _poolFeeHighPrice;
-
-        flashLoan(tokenIn, borrowAmount);
-    }
-
-    function flashLoan(address tokenIn, uint256 amount) internal {
-        bytes memory userData = abi.encode(
-            tokenIn,
-            poolFeeLow,
-            poolFeeLowPrice,
-            poolFeeHigh,
-            poolFeeHighPrice
+        require(borrowAmount > 0, 'Invalid amount');
+        require(priceLow != priceHigh, 'No arbitrage opportunity');
+        require(
+            _feeLow == 500 || _feeLow == 3000 || _feeLow == 10000,
+            'Invalid _feeLow'
         );
+        require(
+            _feeHigh == 500 || _feeHigh == 3000 || _feeHigh == 10000,
+            'Invalid _feeHigh'
+        );
+        isLowFirst = priceLow < priceHigh;
+        feeLow = _feeLow;
+        feeHigh = _feeHigh;
+
         address[] memory tokens = new address[](1);
         tokens[0] = tokenIn;
+
         uint256[] memory amounts = new uint256[](1);
-        amounts[0] = amount;
+        amounts[0] = borrowAmount;
+
+        bytes memory userData = abi.encode(tokenIn);
+
         flashLoan(tokens, amounts, userData);
     }
 
-    /**
-     * @dev Implements the swap logic on receiving a flash loan.
-     */
     function _executeOperation(
         address token,
         uint256 amount,
         uint256 fee,
-        bytes memory /* userData */
+        bytes memory
     ) internal override {
-        uint256 amountOut;
-        if (poolFeeLowPrice < poolFeeHighPrice) {
-            // 1) Swap WETH -> USDT on low-fee pool
-            TransferHelper.safeApprove(token, address(swapRouter), amount);
-            uint256 usdtReceived = swapRouter.exactInputSingle(
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: token,
-                    tokenOut: USDT,
-                    fee: poolFeeLow,
-                    recipient: address(this),
-                    deadline: block.timestamp,
-                    amountIn: amount,
-                    amountOutMinimum: 0,
-                    sqrtPriceLimitX96: 0
-                })
-            );
-            console.log('FlashSwap: swapped to USDT', usdtReceived);
+        uint256 usdtAmount;
+        uint256 finalOut;
 
-            // 2) Swap USDT -> WETH on high-fee pool
-            TransferHelper.safeApprove(USDT, address(swapRouter), usdtReceived);
-            amountOut = swapRouter.exactInputSingle(
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: USDT,
-                    tokenOut: token,
-                    fee: poolFeeHigh,
-                    recipient: address(this),
-                    deadline: block.timestamp,
-                    amountIn: usdtReceived,
-                    amountOutMinimum: amount + fee,
-                    sqrtPriceLimitX96: 0
-                })
-            );
-            console.log('FlashSwap: swapped back to WETH', amountOut);
-        } else {
-            // 1) Swap WETH -> USDT on high-fee pool
-            TransferHelper.safeApprove(token, address(swapRouter), amount);
-            uint256 usdtReceived = swapRouter.exactInputSingle(
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: token,
-                    tokenOut: USDT,
-                    fee: poolFeeHigh,
-                    recipient: address(this),
-                    deadline: block.timestamp,
-                    amountIn: amount,
-                    amountOutMinimum: 0,
-                    sqrtPriceLimitX96: 0
-                })
-            );
-            console.log('FlashSwap: swapped to USDT', usdtReceived);
+        // First swap
+        TransferHelper.safeApprove(token, address(swapRouter), amount);
+        usdtAmount = _swap(token, USDT, isLowFirst ? feeLow : feeHigh, amount);
 
-            // 2) Swap USDT -> WETH on low-fee pool
-            TransferHelper.safeApprove(USDT, address(swapRouter), usdtReceived);
-            amountOut = swapRouter.exactInputSingle(
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: USDT,
-                    tokenOut: token,
-                    fee: poolFeeLow,
-                    recipient: address(this),
-                    deadline: block.timestamp,
-                    amountIn: usdtReceived,
-                    amountOutMinimum: amount + fee,
-                    sqrtPriceLimitX96: 0
-                })
-            );
-            console.log('FlashSwap: swapped back to WETH', amountOut);
-        }
-        require(amountOut > amount + fee, 'Arbitrage not profitable');
+        // Second swap
+        TransferHelper.safeApprove(USDT, address(swapRouter), usdtAmount);
+        finalOut = _swap(
+            USDT,
+            token,
+            isLowFirst ? feeHigh : feeLow,
+            usdtAmount
+        );
+
+        console.log(
+            'Arb result: start=%s, final=%s, fee=%s',
+            amount,
+            finalOut,
+            fee
+        );
+        require(finalOut > amount + fee, 'Arbitrage not profitable');
     }
 
-    /// @notice Withdraw any native ETH stuck in contract
+    function _swap(
+        address tokenIn,
+        address tokenOut,
+        uint24 fee,
+        uint256 amountIn
+    ) internal returns (uint256) {
+        return
+            swapRouter.exactInputSingle(
+                ISwapRouter.ExactInputSingleParams({
+                    tokenIn: tokenIn,
+                    tokenOut: tokenOut,
+                    fee: fee,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: amountIn,
+                    amountOutMinimum: 0, // consider using slippage protection
+                    sqrtPriceLimitX96: 0
+                })
+            );
+    }
+
     function withdraw() external onlyOwner {
         uint256 bal = address(this).balance;
         require(bal > 0, 'No ETH');
