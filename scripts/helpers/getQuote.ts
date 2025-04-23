@@ -1,6 +1,8 @@
 import { ethers, toBigInt } from 'ethers';
 import { UNISWAP_QUOTER } from '../../shared/mainnet_addr';
 import { provider } from './provider';
+import axios from 'axios';
+import { ArbPathResult } from './types';
 
 /**
  * Get a quote for a token swap using the Uniswap Quoter contract.
@@ -38,4 +40,21 @@ export async function getQuote(
     console.error('Error getting quote:', error);
     throw error;
   }
+}
+/**
+ *  Find the best arbitrage path for a given token and amount.
+ * @param token The address of the token to swap.
+ * @param amountIn The amount of input token to swap.
+ * @param tokenOut The address of the output token.
+ * @returns
+ */
+export async function findBestPath(
+  tokenIn: string,
+  amountIn: string,
+  tokenOut: string,
+) {
+  const url = `http://localhost:3000/dex/arbitrage?amountIn=${amountIn}&tokenIn=${tokenIn}&tokenOut=${tokenOut}`;
+  const path = axios.get<ArbPathResult>(url);
+  const { data } = await path;
+  return data;
 }

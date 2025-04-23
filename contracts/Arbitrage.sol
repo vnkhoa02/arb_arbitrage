@@ -20,25 +20,18 @@ contract Arbitrage is FlashLoanProvider {
 
     function simpleArbitrage(
         address tokenIn,
-        uint24 _feeLow,
-        uint24 _feeHigh,
-        uint256 priceLow,
-        uint256 priceHigh,
+        uint24 _buyFee,
+        uint24 _sellFee,
+        uint256 buyPrice,
+        uint256 sellPrice,
         uint256 borrowAmount
     ) external onlyOwner {
         require(borrowAmount > 0, 'Invalid amount');
-        require(priceLow != priceHigh, 'No arbitrage opportunity');
-        require(
-            _feeLow == 500 || _feeLow == 3000 || _feeLow == 10000,
-            'Invalid _feeLow'
-        );
-        require(
-            _feeHigh == 500 || _feeHigh == 3000 || _feeHigh == 10000,
-            'Invalid _feeHigh'
-        );
-        isLowFirst = priceLow < priceHigh;
-        feeLow = _feeLow;
-        feeHigh = _feeHigh;
+        require(buyPrice != sellPrice, 'No arbitrage opportunity');
+
+        isLowFirst = buyPrice < sellPrice;
+        feeLow = _buyFee;
+        feeHigh = _sellFee;
 
         address[] memory tokens = new address[](1);
         tokens[0] = tokenIn;
@@ -46,40 +39,58 @@ contract Arbitrage is FlashLoanProvider {
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = borrowAmount;
 
-        bytes memory userData = abi.encode(tokenIn);
+        bytes memory userData = abi.encode(tokenIn, buyPrice, sellPrice);
 
         flashLoan(tokens, amounts, userData);
     }
 
     function _executeOperation(
-        address token,
+        address /* token */,
         uint256 amount,
         uint256 fee,
-        bytes memory
+        bytes memory userData
     ) internal override {
+        // Extract the buy and sell prices from userData
+        (address tokenIn, , ) = abi.decode(
+            userData,
+            (address, uint256, uint256)
+        );
+
         uint256 usdtAmount;
         uint256 finalOut;
+
         // First swap
-        TransferHelper.safeApprove(token, address(swapRouter), amount);
-        usdtAmount = _swap(token, USDT, isLowFirst ? feeLow : feeHigh, amount);
+        TransferHelper.safeApprove(tokenIn, address(swapRouter), amount);
+        usdtAmount = _swap(
+            tokenIn,
+            USDT,
+            isLowFirst ? feeLow : feeHigh,
+            amount
+        );
+
         // Second swap
         TransferHelper.safeApprove(USDT, address(swapRouter), usdtAmount);
         finalOut = _swap(
             USDT,
-            token,
+            tokenIn,
             isLowFirst ? feeHigh : feeLow,
             usdtAmount
         );
+
         console.log(
             'Arb result: start=%s, final=%s, fee=%s',
             amount,
             finalOut,
             fee
         );
-        require(finalOut > amount + fee, 'Arbitrage not profitable');
-        console.log('Profit: %s', finalOut - amount - fee);
+
+        // Check if the arbitrage is profitable
+        uint256 profit = finalOut - amount - fee;
+        require(profit > 0, 'Arbitrage not profitable');
+
+        console.log('Profit: %s', profit);
         // Repay the flash loan
-        TransferHelper.safeApprove(token, VAULT_ADDRESS, amount + fee);
+        TransferHelper.safeApprove(tokenIn, VAULT_ADDRESS, amount + fee);
     }
 
     function _swap(
@@ -96,6 +107,12 @@ contract Arbitrage is FlashLoanProvider {
             0
         );
         uint256 amountOutMinimum = (quote * 99) / 100;
+        console.log(
+            'AmountOutMinimum: %s -> in %s out -> %s',
+            tokenIn,
+            amountIn,
+            amountOutMinimum
+        );
         return
             swapRouter.exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
