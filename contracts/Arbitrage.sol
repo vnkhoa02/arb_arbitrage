@@ -4,10 +4,13 @@ pragma solidity ^0.8.28;
 import 'hardhat/console.sol';
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
+import '@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol';
+
 import {FlashLoanProvider} from './FlashLoanProvider.sol';
 
 contract Arbitrage is FlashLoanProvider {
     address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    IQuoter public quoter = IQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6);
     ISwapRouter public constant swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
@@ -85,6 +88,14 @@ contract Arbitrage is FlashLoanProvider {
         uint24 fee,
         uint256 amountIn
     ) internal returns (uint256) {
+        uint256 quote = quoter.quoteExactInputSingle(
+            tokenIn,
+            tokenOut,
+            fee,
+            amountIn,
+            0
+        );
+        uint256 amountOutMinimum = (quote * 99) / 100;
         return
             swapRouter.exactInputSingle(
                 ISwapRouter.ExactInputSingleParams({
@@ -94,7 +105,7 @@ contract Arbitrage is FlashLoanProvider {
                     recipient: address(this),
                     deadline: block.timestamp,
                     amountIn: amountIn,
-                    amountOutMinimum: 0, // consider using slippage protection
+                    amountOutMinimum: amountOutMinimum,
                     sqrtPriceLimitX96: 0
                 })
             );
