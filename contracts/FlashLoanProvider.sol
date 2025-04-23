@@ -55,12 +55,12 @@ abstract contract FlashLoanProvider is IFlashLoanRecipient {
         require(msg.sender == VAULT_ADDRESS, 'FlashLoanProvider: Not vault');
         for (uint256 i = 0; i < tokens.length; i++) {
             // Log the received tokens and amounts
-            console.log(
-                'Received flash loan: %s, Amount: %s, Fee: %s',
-                address(tokens[i]),
-                amounts[i],
-                feeAmounts[i]
-            );
+            // console.log(
+            //     'Received flash loan: %s, Amount: %s, Fee: %s',
+            //     address(tokens[i]),
+            //     amounts[i],
+            //     feeAmounts[i]
+            // );
             _executeOperation(
                 address(tokens[i]),
                 amounts[i],

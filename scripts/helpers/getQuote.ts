@@ -1,8 +1,8 @@
+import axios from 'axios';
 import { ethers, toBigInt } from 'ethers';
 import { UNISWAP_QUOTER } from '../../shared/mainnet_addr';
+import { ArbPath } from '../types';
 import { provider } from './provider';
-import axios from 'axios';
-import { ArbPathResult } from './types';
 
 /**
  * Get a quote for a token swap using the Uniswap Quoter contract.
@@ -54,7 +54,8 @@ export async function findBestPath(
   tokenOut: string,
 ) {
   const url = `http://localhost:3000/dex/arbitrage?amountIn=${amountIn}&tokenIn=${tokenIn}&tokenOut=${tokenOut}`;
-  const path = axios.get<ArbPathResult>(url);
+  console.log('Fetching path from:', url);
+  const path = axios.get<ArbPath>(url);
   const { data } = await path;
   return data;
 }
