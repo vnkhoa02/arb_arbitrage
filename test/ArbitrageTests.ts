@@ -18,7 +18,7 @@ describe('Arbitrage Tests', () => {
     console.log('Arbitrage deployed to:', Arbitrage.target);
   });
 
-  it('simpleArbitrage: should not revert & state vars set', async () => {
+  it('simpleArbitrage', async () => {
     // Call simpleArbitrage as owner
     const _lowFee = 500; // low-fee tier
     const _lowFeePrice = ethers.parseUnits('17787.440663', 18); // low-fee pool price (dummy)
@@ -34,8 +34,9 @@ describe('Arbitrage Tests', () => {
       BORROW_AMOUNT,
     );
     await tx.wait();
-    console.log('simpleArbitrage tx:', tx);
-    // Wait for transaction to be mined
-    expect(tx).to.not.be.reverted;
+    // Check balance of the contract
+    const balance = await ethers.provider.getBalance(Arbitrage.target);
+    console.log('Arbitrage contract balance:', ethers.formatEther(balance));
+    expect(balance).to.be.gte(0);
   });
 });

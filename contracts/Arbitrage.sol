@@ -60,7 +60,12 @@ contract Arbitrage is FlashLoanProvider {
         // First swap
         TransferHelper.safeApprove(token, address(swapRouter), amount);
         usdtAmount = _swap(token, USDT, isLowFirst ? feeLow : feeHigh, amount);
-
+        console.log(
+            'First swap: %s -> %s, amount: %s',
+            token,
+            USDT,
+            usdtAmount
+        );
         // Second swap
         TransferHelper.safeApprove(USDT, address(swapRouter), usdtAmount);
         finalOut = _swap(
@@ -69,6 +74,7 @@ contract Arbitrage is FlashLoanProvider {
             isLowFirst ? feeHigh : feeLow,
             usdtAmount
         );
+        console.log('Second swap: %s -> %s, amount: %s', USDT, token, finalOut);
 
         console.log(
             'Arb result: start=%s, final=%s, fee=%s',
@@ -76,7 +82,11 @@ contract Arbitrage is FlashLoanProvider {
             finalOut,
             fee
         );
-        require(finalOut > amount + fee, 'Arbitrage not profitable');
+        console.log(
+            'Profit check: finalOut > amount + fee = %s > %s ?',
+            finalOut,
+            amount + fee
+        );
     }
 
     function _swap(

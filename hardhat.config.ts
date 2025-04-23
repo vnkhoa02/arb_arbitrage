@@ -11,7 +11,6 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: process.env.INFURA_MAINNET_URL as string,
-        blockNumber: 22323681,
       },
     },
     sepolia: {
