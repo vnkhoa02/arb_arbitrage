@@ -1,11 +1,10 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { Arbitrage, IWETH, IERC20 } from '../typechain-types';
+import { Arbitrage, IERC20 } from '../typechain-types';
 import { WETH9 } from '../shared/mainnet_addr';
 
-describe('Arbitrage (Mainnet Fork)', () => {
+describe('Arbitrage Tests', () => {
   let Arbitrage: Arbitrage;
-  let weth: IWETH;
   let USDT: IERC20;
   let owner: any;
   let user: any;
@@ -21,27 +20,28 @@ describe('Arbitrage (Mainnet Fork)', () => {
     await Arbitrage.waitForDeployment();
 
     // Get real WETH & USDT on Mainnet
-    weth = (await ethers.getContractAt('IWETH', WETH9)) as IWETH;
     USDT = (await ethers.getContractAt('IERC20', USDT)) as IERC20;
   });
 
   it('simpleArbitrage: should not revert & state vars set', async () => {
     // Call simpleArbitrage as owner
+    const _lowFee = 3000; // low-fee tier
+    const _highFee = 10000; // high-fee tier
     await expect(
       Arbitrage.connect(owner).simpleArbitrage(
         WETH9,
-        3000, // low-fee tier
+        _lowFee, // low-fee tier
         0, // low-fee pool price (dummy)
-        10000, // high-fee tier
+        _highFee, // high-fee tier
         0, // high-fee pool price (dummy)
         BORROW_AMOUNT, // borrow 0.1 WETH
       ),
     ).to.not.be.reverted;
 
     // Confirm state variables were updated
-    expect(await Arbitrage.poolFeeLow()).to.equal(3000);
+    expect(await Arbitrage.poolFeeLow()).to.equal(_lowFee);
     expect(await Arbitrage.poolFeeLowPrice()).to.equal(0);
-    expect(await Arbitrage.poolFeeHigh()).to.equal(10000);
+    expect(await Arbitrage.poolFeeHigh()).to.equal(_highFee);
     expect(await Arbitrage.poolFeeHighPrice()).to.equal(0);
   });
 });

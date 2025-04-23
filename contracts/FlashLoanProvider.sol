@@ -10,8 +10,19 @@ import 'hardhat/console.sol';
  * @dev Abstract contract that handles Balancer V2 flash loans
  */
 abstract contract FlashLoanProvider is IFlashLoanRecipient {
+    address public owner;
+
     address constant VAULT_ADDRESS = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     IVault internal constant vault = IVault(VAULT_ADDRESS);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, 'Not owner');
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
 
     function makeFlashLoan(
         IERC20[] memory tokens,
@@ -21,7 +32,7 @@ abstract contract FlashLoanProvider is IFlashLoanRecipient {
         vault.flashLoan(this, tokens, amounts, userData);
     }
 
-    function customFlashLoan(
+    function flashLoan(
         address[] memory tokens,
         uint256[] memory amounts,
         bytes memory userData
@@ -42,12 +53,17 @@ abstract contract FlashLoanProvider is IFlashLoanRecipient {
         bytes memory userData
     ) external override {
         require(msg.sender == VAULT_ADDRESS, 'FlashLoanProvider: Not vault');
-        _executeOperation(
-            address(tokens[0]),
-            amounts[0],
-            feeAmounts[0],
-            userData
-        );
+        for (uint256 i = 0; i < tokens.length; i++) {
+            uint256 totalRepayment = amounts[i] + feeAmounts[i];
+            console.log(
+                'FlashLoanProvider: Repaying %s + %s = %s',
+                amounts[i],
+                feeAmounts[i],
+                totalRepayment
+            );
+            // Execute the operation
+            tokens[i].transfer(VAULT_ADDRESS, totalRepayment);
+        }
     }
 
     /**
