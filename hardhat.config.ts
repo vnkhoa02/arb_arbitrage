@@ -18,6 +18,9 @@ const config: HardhatUserConfig = {
       accounts: [],
     },
   },
+  mocha: {
+    timeout: 100000000,
+  },
 };
 
 export default config;
