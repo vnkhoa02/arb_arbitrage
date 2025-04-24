@@ -1,3 +1,4 @@
+import path from 'path';
 import 'dotenv/config';
 import 'hardhat-deploy';
 import '@nomicfoundation/hardhat-ethers';
@@ -7,6 +8,9 @@ import type { HardhatUserConfig } from 'hardhat/config';
 
 const config: HardhatUserConfig = {
   solidity: '0.8.28',
+  paths: {
+    deploy: path.join(__dirname, 'scripts/deploy'),
+  },
   networks: {
     hardhat: {
       forking: {
