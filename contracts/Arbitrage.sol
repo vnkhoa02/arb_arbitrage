@@ -21,7 +21,9 @@ contract Arbitrage is FlashLoanProvider {
         address tokenIn,
         address tokenOut,
         bytes calldata forwardPath,
+        uint256 forwardOutMin,
         bytes calldata backwardPath,
+        uint256 backwardOutMin,
         uint256 borrowAmount
     ) external onlyOwner {
         require(borrowAmount > 0, 'Invalid borrow amount');
@@ -37,7 +39,9 @@ contract Arbitrage is FlashLoanProvider {
             tokenIn,
             tokenOut,
             forwardPath,
-            backwardPath
+            forwardOutMin,
+            backwardPath,
+            backwardOutMin
         );
 
         flashLoan(tokens, amounts, data);
@@ -55,16 +59,22 @@ contract Arbitrage is FlashLoanProvider {
             address tokenIn,
             address tokenOut,
             bytes memory forwardPath,
-            bytes memory backwardPath
-        ) = abi.decode(userData, (address, address, bytes, bytes));
+            uint256 forwardOutMin,
+            bytes memory backwardPath,
+            uint256 backwardOutMin
+        ) = abi.decode(
+                userData,
+                (address, address, bytes, uint256, bytes, uint256)
+            );
 
         // Log the decoded values
-        console.log('Executing operation with:');
+        console.log('Executing operation with loan amount:', amount);
         console.log('TokenIn:', tokenIn);
         console.log('TokenOut:', tokenOut);
         console.log('Amount to Swap:', amount);
         console.log('Fee:', fee);
-
+        console.log('ForwardOutMin:', forwardOutMin);
+        
         // 1) Forward multihop swap: tokenIn -> tokenOut
         TransferHelper.safeApprove(tokenIn, address(swapRouter), amount);
         uint256 outAmount = swapRouter.exactInput(
@@ -73,13 +83,15 @@ contract Arbitrage is FlashLoanProvider {
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountIn: amount,
-                amountOutMinimum: 0
+                amountOutMinimum: forwardOutMin
             })
         );
 
         // Log the output amount from the forward swap
         console.log('Output Amount from Forward Swap:', outAmount);
         require(outAmount > 0, 'Forward swap failed');
+
+        console.log('backwardOutMin:', backwardOutMin);
 
         // 2) Backward multihop swap: tokenOut -> tokenIn
         TransferHelper.safeApprove(tokenOut, address(swapRouter), outAmount);
@@ -89,7 +101,7 @@ contract Arbitrage is FlashLoanProvider {
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountIn: outAmount,
-                amountOutMinimum: 0
+                amountOutMinimum: backwardOutMin
             })
         );
 
