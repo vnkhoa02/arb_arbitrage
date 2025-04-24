@@ -1,47 +1,51 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { findBestPath } from '../scripts/helpers/getQuote';
-import { USDT, WETH9 } from '../shared/mainnet_addr';
+import { findBestPath, pickBestRoute } from '../scripts/helpers/getQuote';
+import { SAITO, USDT, WETH9 } from '../shared/mainnet_addr';
 import { Arbitrage } from '../typechain-types';
 
-describe.only('Arbitrage Tests', () => {
-  const ETH_BORROW_AMOUNT = 1; // 1 ETH
+describe('Arbitrage Tests', () => {
+  const BORROW_AMOUNT = 1000; // 1 USDT
   let arbitrage: Arbitrage;
   let owner: any;
 
   before(async () => {
     [owner] = await ethers.getSigners();
-    console.log('Deploying Arbitrage contract...');
     const Factory = await ethers.getContractFactory('Arbitrage', owner);
     arbitrage = (await Factory.deploy()) as Arbitrage;
     await arbitrage.waitForDeployment();
-    console.log('Arbitrage deployed to:', arbitrage.target);
   });
 
   it('simpleArbitrage', async function () {
-    // NEW: findBestPath(tokenIn, tokenOut, amountIn)
-    const path = await findBestPath(WETH9, USDT, ETH_BORROW_AMOUNT.toString());
+    // 1) find the best path (must now include encoded paths)
+    const path = await findBestPath(USDT, SAITO, BORROW_AMOUNT.toString());
     console.log('Arbitrage Path Info:', path);
 
-    // skip if the entire round-trip isn't profitable
+    // 2) skip if not profitable
     if (!path.roundTrip.isProfitable) {
       console.log('No arbitrage opportunity found.');
       return this.skip();
     }
 
+    // 3) Destructure the two encoded routes (bytes)
+    const forwardRoute = pickBestRoute(path.forward.route);
+    console.log('forwardRoute -->', forwardRoute);
+    const backwardRoute = pickBestRoute(path.backward.route);
+    console.log('backwardRoute -->', backwardRoute);
+
+    // 4) Execute
     const tx = await arbitrage.connect(owner).simpleArbitrage(
-      WETH9, // tokenIn
-      USDT, // tokenOut
-      path.forward.fee, // forwardFee
-      path.backward.fee, // backwardFee
-      ethers.parseUnits(String(path.forward.price), 18), // forwardPrice (scaled to 1e18)
-      ethers.parseUnits(Number(path.backward.price).toFixed(6), 6), // backwardPrice (scaled to 1e6)
-      ethers.parseEther(ETH_BORROW_AMOUNT.toString()), // borrowAmount
+      USDT, // tokenIn
+      SAITO, // tokenOut
+      forwardRoute.encoded, // bytes path for forward leg
+      backwardRoute.encoded, // bytes path for backward leg
+      ethers.parseEther(BORROW_AMOUNT.toString()), // borrowAmount
     );
     await tx.wait();
 
-    const balance = await ethers.provider.getBalance(arbitrage.target);
-    console.log('Arbitrage contract ETH balance:', ethers.formatEther(balance));
-    expect(balance).to.be.gte(0);
+    // 5) Verify
+    const bal = await ethers.provider.getBalance(arbitrage.target);
+    console.log('Arbitrage contract ETH balance:', ethers.formatEther(bal));
+    expect(bal).to.be.gte(0);
   });
 });

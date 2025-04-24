@@ -11,117 +11,86 @@ contract Arbitrage is FlashLoanProvider {
     ISwapRouter public constant swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
+    /// @notice Initiates a flash-loan-backed arbitrage with custom Uniswap V3 paths
+    /// @param tokenIn        The initial token to borrow and swap
+    /// @param tokenOut       The intermediate token after forward swap
+    /// @param forwardPath    Uniswap V3 path bytes for forward leg (tokenIn → ... → tokenOut)
+    /// @param backwardPath   Uniswap V3 path bytes for backward leg (tokenOut → ... → tokenIn)
+    /// @param borrowAmount   Amount of tokenIn to borrow and start with (TokenIn Amount)
     function simpleArbitrage(
         address tokenIn,
         address tokenOut,
-        uint24 forwardFee,
-        uint24 backwardFee,
-        uint256 forwardPrice,
-        uint256 backwardPrice,
+        bytes calldata forwardPath,
+        bytes calldata backwardPath,
         uint256 borrowAmount
     ) external onlyOwner {
-        require(borrowAmount > 0, 'Invalid amount');
+        require(borrowAmount > 0, 'Invalid borrow amount');
 
+        // Prepare flash loan arguments
         address[] memory tokens = new address[](1);
         tokens[0] = tokenIn;
-
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = borrowAmount;
 
-        bytes memory userData = abi.encode(
+        // Encode paths and tokens for callback
+        bytes memory data = abi.encode(
             tokenIn,
             tokenOut,
-            forwardFee,
-            backwardFee,
-            forwardPrice,
-            backwardPrice
+            forwardPath,
+            backwardPath
         );
 
-        flashLoan(tokens, amounts, userData);
+        flashLoan(tokens, amounts, data);
     }
 
+    /// @dev Called by FlashLoanProvider after loan is received
     function _executeOperation(
-        address /* token */,
+        address, // loanToken
         uint256 amount,
         uint256 fee,
         bytes memory userData
     ) internal override {
-        // Extract the buy and sell prices from userData
+        // Decode inputs
         (
             address tokenIn,
             address tokenOut,
-            uint24 forwardFee,
-            uint24 backwardFee,
-            uint256 forwardPrice,
-            uint256 backwardPrice
-        ) = abi.decode(
-                userData,
-                (address, address, uint24, uint24, uint256, uint256)
-            );
+            bytes memory forwardPath,
+            bytes memory backwardPath
+        ) = abi.decode(userData, (address, address, bytes, bytes));
 
-        uint256 expectedOut = 0;
-
-        // Forward swap
+        // 1) Forward multihop swap: tokenIn -> tokenOut
         TransferHelper.safeApprove(tokenIn, address(swapRouter), amount);
-        expectedOut = (forwardPrice * amount) / 1e18;
-        uint256 usdtAmount = _swap(
-            tokenIn,
-            tokenOut,
-            forwardFee,
-            amount,
-            expectedOut
+        uint256 outAmount = swapRouter.exactInput(
+            ISwapRouter.ExactInputParams({
+                path: forwardPath,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountIn: amount,
+                amountOutMinimum: 0
+            })
         );
 
-        // Backward swap
-        TransferHelper.safeApprove(tokenOut, address(swapRouter), usdtAmount);
-        expectedOut = backwardPrice * usdtAmount;
-        uint256 finalOut = _swap(
-            tokenOut,
-            tokenIn,
-            backwardFee,
-            usdtAmount,
-            expectedOut
+        // 2) Backward multihop swap: tokenOut -> tokenIn
+        TransferHelper.safeApprove(tokenOut, address(swapRouter), outAmount);
+        uint256 finalAmount = swapRouter.exactInput(
+            ISwapRouter.ExactInputParams({
+                path: backwardPath,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountIn: outAmount,
+                amountOutMinimum: 0
+            })
         );
 
-        console.log(
-            'Arb result: start=%s, final=%s, fee=%s',
-            amount,
-            finalOut,
-            fee
-        );
-        require(finalOut > amount + fee, 'Arbitrage not profitable');
-        console.log('Arbitrage profit: %s', finalOut - amount - fee);
-        // Repay the flash loan
+        console.log('Start:', amount, 'Mid:', outAmount);
+        console.log('Final:', finalAmount, 'Fee:', fee);
+
+        // Profit check: final received must cover loan + fee
+        require(finalAmount > amount + fee, 'Arbitrage not profitable');
+        console.log('Profit:', finalAmount - amount - fee);
+
+        // Repay flash loan
         TransferHelper.safeApprove(tokenIn, VAULT_ADDRESS, amount + fee);
-    }
-
-    function _swap(
-        address tokenIn,
-        address tokenOut,
-        uint24 fee,
-        uint256 amountIn,
-        uint256 amountOutMinimum
-    ) internal returns (uint256) {
-        console.log('AmountIn: %s', amountIn);
-        console.log(
-            'Swapping %s for %s %s',
-            tokenIn,
-            amountOutMinimum,
-            tokenOut
-        );
-        return
-            swapRouter.exactInputSingle(
-                ISwapRouter.ExactInputSingleParams({
-                    tokenIn: tokenIn,
-                    tokenOut: tokenOut,
-                    fee: fee,
-                    recipient: address(this),
-                    deadline: block.timestamp + 15, // seconds
-                    amountIn: amountIn,
-                    amountOutMinimum: amountOutMinimum,
-                    sqrtPriceLimitX96: 0
-                })
-            );
     }
 
     function withdraw() external onlyOwner {
