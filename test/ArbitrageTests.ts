@@ -6,7 +6,7 @@ import { Arbitrage } from '../typechain-types';
 import { parseUnits } from 'ethers';
 
 describe('Arbitrage Tests', () => {
-  const BORROW_AMOUNT = 100; // 1000 USD
+  const BORROW_AMOUNT = 1000; // 1000 USD
   let arbitrage: Arbitrage;
   let owner: any;
 
