@@ -120,4 +120,10 @@ contract Arbitrage is FlashLoanProvider {
         require(bal > 0, 'No ETH');
         payable(owner).transfer(bal);
     }
+
+    function withdrawToken(address token) external onlyOwner {
+        uint256 bal = IERC20(token).balanceOf(address(this));
+        require(bal > 0, 'No token balance');
+        IERC20(token).transfer(owner, bal);
+    }
 }
