@@ -58,6 +58,13 @@ contract Arbitrage is FlashLoanProvider {
             bytes memory backwardPath
         ) = abi.decode(userData, (address, address, bytes, bytes));
 
+        // Log the decoded values
+        console.log('Executing operation with:');
+        console.log('TokenIn:', tokenIn);
+        console.log('TokenOut:', tokenOut);
+        console.log('Amount to Swap:', amount);
+        console.log('Fee:', fee);
+
         // 1) Forward multihop swap: tokenIn -> tokenOut
         TransferHelper.safeApprove(tokenIn, address(swapRouter), amount);
         uint256 outAmount = swapRouter.exactInput(
@@ -69,6 +76,10 @@ contract Arbitrage is FlashLoanProvider {
                 amountOutMinimum: 0
             })
         );
+
+        // Log the output amount from the forward swap
+        console.log('Output Amount from Forward Swap:', outAmount);
+        require(outAmount > 0, 'Forward swap failed');
 
         // 2) Backward multihop swap: tokenOut -> tokenIn
         TransferHelper.safeApprove(tokenOut, address(swapRouter), outAmount);
@@ -82,15 +93,12 @@ contract Arbitrage is FlashLoanProvider {
             })
         );
 
-        console.log('Start:', amount, 'Mid:', outAmount);
-        console.log('Final:', finalAmount, 'Fee:', fee);
+        // Log the final amount after the backward swap
+        console.log('Final Amount from Backward Swap:', finalAmount);
 
         // Profit check: final received must cover loan + fee
         require(finalAmount > amount + fee, 'Arbitrage not profitable');
         console.log('Profit:', finalAmount - amount - fee);
-
-        // Repay flash loan
-        TransferHelper.safeApprove(tokenIn, VAULT_ADDRESS, amount + fee);
     }
 
     function withdraw() external onlyOwner {

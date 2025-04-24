@@ -54,19 +54,16 @@ abstract contract FlashLoanProvider is IFlashLoanRecipient {
     ) external override {
         require(msg.sender == VAULT_ADDRESS, 'FlashLoanProvider: Not vault');
         for (uint256 i = 0; i < tokens.length; i++) {
-            // Log the received tokens and amounts
-            // console.log(
-            //     'Received flash loan: %s, Amount: %s, Fee: %s',
-            //     address(tokens[i]),
-            //     amounts[i],
-            //     feeAmounts[i]
-            // );
             _executeOperation(
                 address(tokens[i]),
                 amounts[i],
                 feeAmounts[i],
                 userData
             );
+        }
+        console.log('Repay the loan...');
+        for (uint256 i = 0; i < tokens.length; i++) {
+            tokens[i].transfer(address(vault), amounts[i] + feeAmounts[i]);
         }
     }
 

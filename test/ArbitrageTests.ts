@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { findBestPath, pickBestRoute } from '../scripts/helpers/getQuote';
-import { SAITO, USDT, WETH9 } from '../shared/mainnet_addr';
+import { DAI, SAITO } from '../shared/mainnet_addr';
 import { Arbitrage } from '../typechain-types';
 
-describe('Arbitrage Tests', () => {
-  const BORROW_AMOUNT = 1000; // 1 USDT
+describe.only('Arbitrage Tests', () => {
+  const BORROW_AMOUNT = 1000; // 1000 USD
   let arbitrage: Arbitrage;
   let owner: any;
 
@@ -18,7 +18,7 @@ describe('Arbitrage Tests', () => {
 
   it('simpleArbitrage', async function () {
     // 1) find the best path (must now include encoded paths)
-    const path = await findBestPath(USDT, SAITO, BORROW_AMOUNT.toString());
+    const path = await findBestPath(DAI, SAITO, BORROW_AMOUNT.toString());
     console.log('Arbitrage Path Info:', path);
 
     // 2) skip if not profitable
@@ -35,7 +35,7 @@ describe('Arbitrage Tests', () => {
 
     // 4) Execute
     const tx = await arbitrage.connect(owner).simpleArbitrage(
-      USDT, // tokenIn
+      DAI, // tokenIn
       SAITO, // tokenOut
       forwardRoute.encoded, // bytes path for forward leg
       backwardRoute.encoded, // bytes path for backward leg

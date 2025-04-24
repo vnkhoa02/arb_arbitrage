@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { getAddress, zeroPadValue, concat, getBytes } from 'ethers';
+import { getAddress, zeroPadValue, concat, getBytes, toBeHex } from 'ethers';
 import { ArbPath } from '../types';
 import { Route } from '../types/quote';
 
@@ -17,7 +17,7 @@ export async function findBestPath(
   tokenOut: string,
   amountIn: string,
 ) {
-  const url = `${scannerUrl}/dex/arbitrage?amountIn=${amountIn}&tokenIn=${tokenIn}&tokenOut=${tokenOut}`;
+  const url = `${scannerUrl}/scanner/arbitrage?amountIn=${amountIn}&tokenIn=${tokenIn}&tokenOut=${tokenOut}`;
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch arbitrage path: ${response.statusText}`);
@@ -50,9 +50,9 @@ function encodeRouteToPath(route: Route[]): string {
     const tokenInBytes = getBytes(getAddress(hop.tokenIn.address));
     pathBytes.push(getBytes(zeroPadValue(tokenInBytes, 20)));
 
-    // Fee: number/string -> bigint -> 3 bytes
-    const feeBigInt = getBytes(hop.fee);
-    const feeBytes = getBytes(zeroPadValue(feeBigInt, 3));
+    // Fee: number/string -> BigInt -> 3 bytes
+    const feeHex = toBeHex(BigInt(hop.fee), 3); // Converts to 3-byte hex (e.g., 0x01f4 for 500)
+    const feeBytes = getBytes(feeHex); // Convert hex string to bytes
     pathBytes.push(feeBytes);
 
     // TokenOut: only on last hop
