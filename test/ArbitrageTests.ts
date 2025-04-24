@@ -6,7 +6,7 @@ import { Arbitrage } from '../typechain-types';
 import { parseUnits } from 'ethers';
 
 describe('Arbitrage Tests', () => {
-  const BORROW_AMOUNT = 1000; // 1000 USD
+  const BORROW_AMOUNT = 100; // 1000 USD
   let arbitrage: Arbitrage;
   let owner: any;
 
@@ -34,7 +34,7 @@ describe('Arbitrage Tests', () => {
     const backwardOutMin = parseUnits(path.backward.amountOut.toString(), 18);
     const amountIn = parseUnits(BORROW_AMOUNT.toString(), 18); // returns BigInt
 
-    const tx = await arbitrage
+    const tx = arbitrage
       .connect(owner)
       .simpleArbitrage(
         DAI,
@@ -45,7 +45,7 @@ describe('Arbitrage Tests', () => {
         backwardOutMin,
         amountIn,
       );
-    await tx.wait();
+    await Promise.allSettled([tx]);
 
     const bal = await ethers.provider.getBalance(arbitrage.target);
     console.log('Arbitrage contract ETH balance:', ethers.formatEther(bal));

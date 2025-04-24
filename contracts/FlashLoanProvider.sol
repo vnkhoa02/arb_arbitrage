@@ -61,10 +61,6 @@ abstract contract FlashLoanProvider is IFlashLoanRecipient {
                 userData
             );
         }
-        console.log('Repay the loan...');
-        for (uint256 i = 0; i < tokens.length; i++) {
-            tokens[i].transfer(address(vault), amounts[i] + feeAmounts[i]);
-        }
     }
 
     /**

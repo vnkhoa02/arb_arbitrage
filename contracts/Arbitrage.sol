@@ -49,7 +49,7 @@ contract Arbitrage is FlashLoanProvider {
 
     /// @dev Called by FlashLoanProvider after loan is received
     function _executeOperation(
-        address, // loanToken
+        address loanToken, // loanToken
         uint256 amount,
         uint256 fee,
         bytes memory userData
@@ -74,7 +74,7 @@ contract Arbitrage is FlashLoanProvider {
         console.log('Amount to Swap:', amount);
         console.log('Fee:', fee);
         console.log('ForwardOutMin:', forwardOutMin);
-        
+
         // 1) Forward multihop swap: tokenIn -> tokenOut
         TransferHelper.safeApprove(tokenIn, address(swapRouter), amount);
         uint256 outAmount = swapRouter.exactInput(
@@ -111,6 +111,8 @@ contract Arbitrage is FlashLoanProvider {
         // Profit check: final received must cover loan + fee
         require(finalAmount > amount + fee, 'Arbitrage not profitable');
         console.log('Profit:', finalAmount - amount - fee);
+
+        IERC20(loanToken).transfer(VAULT_ADDRESS, amount + fee); // full repayment
     }
 
     function withdraw() external onlyOwner {
