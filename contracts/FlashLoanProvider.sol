@@ -52,6 +52,7 @@ abstract contract FlashLoanProvider is IFlashLoanRecipient {
         uint256[] memory feeAmounts,
         bytes memory userData
     ) external override {
+        console.log('sender ->', msg.sender);
         require(msg.sender == address(vault), 'FlashLoanProvider: Not vault');
         for (uint256 i = 0; i < tokens.length; i++) {
             _executeOperation(
@@ -60,11 +61,8 @@ abstract contract FlashLoanProvider is IFlashLoanRecipient {
                 feeAmounts[i],
                 userData
             );
-        }
-        // Approve the Vault to pull the repayment
-        for (uint256 i = 0; i < tokens.length; i++) {
             uint256 totalDebt = amounts[i] + feeAmounts[i];
-            IERC20(tokens[i]).approve(address(vault), totalDebt);
+            IERC20(tokens[i]).transfer(address(vault), totalDebt); // full repayment
         }
     }
 
