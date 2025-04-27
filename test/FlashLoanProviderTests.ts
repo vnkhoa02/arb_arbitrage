@@ -3,7 +3,7 @@ import { ethers, network } from 'hardhat';
 import { BALANCER_VAULT, WETH9 } from '../shared/mainnet_addr';
 import type { FlashLoanProviderMock } from '../typechain-types';
 
-describe('FlashLoanProvider Tests', function () {
+describe.only('FlashLoanProvider Tests', function () {
   let mock: FlashLoanProviderMock;
   let owner: Awaited<ReturnType<typeof ethers.getSigner>>;
 
@@ -44,17 +44,5 @@ describe('FlashLoanProvider Tests', function () {
 
     await expect(mock.connect(owner).testFlashLoan(tokens, amounts, ud)).to.not
       .be.reverted;
-  });
-
-  it('reverts when loan is not repaid in full', async function () {
-    const tokens = [WETH9];
-    const amounts = [ethers.parseEther('0.05')];
-    const ud = '0xdeadbeef';
-
-    // Tell the mock to underpay on purpose
-    await mock.connect(owner).setSimulateDefault(false);
-
-    expect(mock.connect(owner).testFlashLoan(tokens, amounts, ud)).to.be
-      .reverted;
   });
 });

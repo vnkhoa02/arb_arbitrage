@@ -14,42 +14,29 @@ contract Arbitrage is FlashLoanProvider {
     /// @notice Initiates a flash-loan-backed arbitrage with custom Uniswap V3 paths
     /// @param tokenIn        The initial token to borrow and swap
     /// @param tokenOut       The intermediate token after forward swap
-    /// @param forwardPath    Uniswap V3 path bytes for forward leg (tokenIn → ... → tokenOut)
-    /// @param backwardPath   Uniswap V3 path bytes for backward leg (tokenOut → ... → tokenIn)
-    /// @param borrowAmount   Amount of tokenIn to borrow and start with (TokenIn Amount)
+    /// @param amountIn   Amount of tokenIn to borrow and start with (TokenIn Amount)
     function simpleArbitrage(
         address tokenIn,
         address tokenOut,
-        bytes calldata forwardPath,
-        uint256 forwardOutMin,
-        bytes calldata backwardPath,
-        uint256 backwardOutMin,
-        uint256 borrowAmount
+        uint256 amountIn
     ) external onlyOwner {
-        require(borrowAmount > 0, 'Invalid borrow amount');
+        require(amountIn > 0, 'Invalid borrow amount');
 
         // Prepare flash loan arguments
         address[] memory tokens = new address[](1);
         tokens[0] = tokenIn;
         uint256[] memory amounts = new uint256[](1);
-        amounts[0] = borrowAmount;
+        amounts[0] = amountIn;
 
         // Encode paths and tokens for callback
-        bytes memory data = abi.encode(
-            tokenIn,
-            tokenOut,
-            forwardPath,
-            forwardOutMin,
-            backwardPath,
-            backwardOutMin
-        );
+        bytes memory data = abi.encode(tokenIn, tokenOut, amountIn);
 
         flashLoan(tokens, amounts, data);
     }
 
     /// @dev Called by FlashLoanProvider after loan is received
     function _executeOperation(
-        address, // loanToken
+        address loanToken, // loanToken
         uint256 amount,
         uint256 fee,
         bytes memory userData
@@ -111,6 +98,8 @@ contract Arbitrage is FlashLoanProvider {
         // Profit check: final received must cover loan + fee
         require(finalAmount > amount + fee, 'Arbitrage not profitable');
         console.log('Profit:', finalAmount - amount - fee);
+
+        IERC20(loanToken).transfer(VAULT_ADDRESS, amount + fee); // full repayment
     }
 
     function withdraw() external onlyOwner {
