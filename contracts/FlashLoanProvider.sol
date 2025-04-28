@@ -52,7 +52,6 @@ abstract contract FlashLoanProvider is IFlashLoanRecipient {
         uint256[] memory feeAmounts,
         bytes memory userData
     ) external override {
-        console.log('sender ->', msg.sender);
         require(msg.sender == address(vault), 'FlashLoanProvider: Not vault');
         for (uint256 i = 0; i < tokens.length; i++) {
             _executeOperation(

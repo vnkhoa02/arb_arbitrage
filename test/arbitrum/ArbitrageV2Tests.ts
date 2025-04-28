@@ -5,7 +5,7 @@ import { encodePath } from '../../scripts/helpers/encode';
 import { USDC, WETH } from '../../shared/arbitrum/mainnet_addr';
 import { ArbitrageV2 } from '../../typechain-types';
 
-describe.only('ArbitrageV2 Arbitrum', () => {
+describe('ArbitrageV2 Arbitrum', () => {
   const BORROW_AMOUNT = ethers.parseEther('1'); // 1 WETH (assuming decimals=18)
 
   let arbitrage: ArbitrageV2;

@@ -52,14 +52,15 @@ contract ArbitrageV2 is FlashLoanProvider {
         console.log('Executing operation with loan amount:', amountIn);
         console.log('TokenIn:', tokenIn);
         console.log('TokenOut:', tokenOut);
-        console.log('Amount to Swap:', amountIn);
         console.log('Fee:', fee);
 
         // 1. Get the output amount from Uniswap (tokenIn -> tokenOut)
         uint256 amountOut0 = swapUni(forwardPath, tokenIn, amountIn);
+        console.log('amountOut0:', amountOut0);
 
         // 2. Get the output amount from PancakeSwap (tokenOut -> tokenIn)
         uint256 amountOut1 = swapPancake(tokenOut, tokenIn, amountOut0);
+        console.log('amountOut1:', amountOut1);
 
         // 3. Calculate if arbitrage is profitable (amountOut1 > amountIn)
         require(amountOut1 > amountIn, 'Arbitrage not profitable');
