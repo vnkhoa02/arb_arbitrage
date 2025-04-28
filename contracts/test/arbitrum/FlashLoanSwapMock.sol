@@ -7,7 +7,7 @@ import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 
 import {FlashLoanProvider} from '../../FlashLoanProvider.sol';
 
-contract ArbitrageV2Mock is FlashLoanProvider {
+contract FlashLoanSwapMock is FlashLoanProvider {
     ISwapRouter public constant swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
