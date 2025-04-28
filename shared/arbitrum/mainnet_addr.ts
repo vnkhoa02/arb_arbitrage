@@ -1,0 +1,3 @@
+export const BALANCER_VAULT = '0xBA12222222228d8Ba445958a75a0704d566BF2C8';
+export const DAI = '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1';
+export const WETH = '0x82af49447d8a07e3bd95bd0d56f35241523fbab1';

@@ -49,7 +49,7 @@ contract Arbitrage is FlashLoanProvider {
 
     /// @dev Called by FlashLoanProvider after loan is received
     function _executeOperation(
-        address, // loanToken
+        address loanToken, // loanToken
         uint256 amount,
         uint256 fee,
         bytes memory userData
@@ -111,17 +111,13 @@ contract Arbitrage is FlashLoanProvider {
         // Profit check: final received must cover loan + fee
         require(finalAmount > amount + fee, 'Arbitrage not profitable');
         console.log('Profit:', finalAmount - amount - fee);
+
+        IERC20(loanToken).transfer(VAULT_ADDRESS, amount + fee); // full repayment
     }
 
     function withdraw() external onlyOwner {
         uint256 bal = address(this).balance;
         require(bal > 0, 'No ETH');
         payable(owner).transfer(bal);
-    }
-
-    function withdrawToken(address token) external onlyOwner {
-        uint256 bal = IERC20(token).balanceOf(address(this));
-        require(bal > 0, 'No token balance');
-        IERC20(token).transfer(owner, bal);
     }
 }

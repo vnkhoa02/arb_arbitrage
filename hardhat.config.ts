@@ -14,18 +14,20 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: process.env.INFURA_MAINNET_URL as string,
+        url: process.env.INFURA_ARBITRUM_MAINNET_URL as string,
       },
     },
-    sepolia: {
-      url: process.env.INFURA_SEPOLIA_URL,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 11155111,
-    },
-    mainnet: {
-      url: process.env.INFURA_MAINNET_URL,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 1,
+    // mainnet: {
+    //   url: process.env.INFURA_MAINNET_URL,
+    //   accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    //   chainId: 1,
+    // },
+    arbMainnet: {
+      url: process.env.INFURA_ARBITRUM_MAINNET_URL,
+      accounts: process.env.TEST_PRIVATE_KEY
+        ? [process.env.TEST_PRIVATE_KEY]
+        : [],
+      chainId: 42161,
     },
   },
   namedAccounts: {

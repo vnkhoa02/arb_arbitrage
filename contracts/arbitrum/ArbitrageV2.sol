@@ -4,10 +4,9 @@ pragma solidity ^0.8.28;
 import 'hardhat/console.sol';
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
+import {FlashLoanProvider} from '../FlashLoanProvider.sol';
 
-import {FlashLoanProvider} from './FlashLoanProvider.sol';
-
-contract Arbitrage is FlashLoanProvider {
+contract ArbitrageV2 is FlashLoanProvider {
     ISwapRouter public constant swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
@@ -36,7 +35,7 @@ contract Arbitrage is FlashLoanProvider {
 
     /// @dev Called by FlashLoanProvider after loan is received
     function _executeOperation(
-        address loanToken, // loanToken
+        address, // loanToken
         uint256 amount,
         uint256 fee,
         bytes memory userData
@@ -98,14 +97,6 @@ contract Arbitrage is FlashLoanProvider {
         // Profit check: final received must cover loan + fee
         require(finalAmount > amount + fee, 'Arbitrage not profitable');
         console.log('Profit:', finalAmount - amount - fee);
-
-        IERC20(loanToken).transfer(VAULT_ADDRESS, amount + fee); // full repayment
-    }
-
-    function withdraw() external onlyOwner {
-        uint256 bal = address(this).balance;
-        require(bal > 0, 'No ETH');
-        payable(owner).transfer(bal);
     }
 
     function withdrawToken(address token) external onlyOwner {
