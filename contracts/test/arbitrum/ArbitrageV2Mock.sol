@@ -79,7 +79,4 @@ contract ArbitrageV2Mock is FlashLoanProvider {
             'Not enough to repay loan'
         );
     }
-
-    // allow contract to receive ETH
-    receive() external payable {}
 }

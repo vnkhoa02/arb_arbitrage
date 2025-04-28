@@ -75,4 +75,12 @@ abstract contract FlashLoanProvider is IFlashLoanRecipient {
         uint256 fee,
         bytes memory userData
     ) internal virtual;
+
+    function withdrawToken(address token) external onlyOwner {
+        uint256 bal = IERC20(token).balanceOf(address(this));
+        require(bal > 0, 'No token balance');
+        IERC20(token).transfer(owner, bal);
+    }
+
+    receive() external payable {}
 }
