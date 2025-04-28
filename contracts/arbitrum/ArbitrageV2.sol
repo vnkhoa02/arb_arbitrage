@@ -104,4 +104,7 @@ contract ArbitrageV2 is FlashLoanProvider {
         require(bal > 0, 'No token balance');
         IERC20(token).transfer(owner, bal);
     }
+
+    // allow contract to receive ETH
+    receive() external payable {}
 }

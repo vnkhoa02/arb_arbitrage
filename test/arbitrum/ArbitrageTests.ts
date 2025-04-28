@@ -3,9 +3,9 @@ import { ethers } from 'hardhat';
 
 import { encodePath } from '../../scripts/helpers/encode';
 import { USDC, WETH } from '../../shared/arbitrum/mainnet_addr';
-import { ArbitrageV2Mock } from '../../typechain-types'; // Adjust to SimpleFlashLoanSwapMock if needed
+import { ArbitrageV2Mock } from '../../typechain-types';
 
-describe.only('ArbitrageV2Mock', () => {
+describe('ArbitrageV2Mock', () => {
   const BORROW_AMOUNT = ethers.parseEther('1'); // 1 WETH (assuming decimals=18)
 
   let arbitrage: ArbitrageV2Mock;
@@ -16,6 +16,12 @@ describe.only('ArbitrageV2Mock', () => {
     const Factory = await ethers.getContractFactory('ArbitrageV2Mock', owner);
     arbitrage = (await Factory.deploy()) as ArbitrageV2Mock;
     await arbitrage.waitForDeployment();
+    const address = await arbitrage.getAddress();
+    const IWETH = await ethers.getContractAt('IWETH', WETH);
+    await IWETH.connect(owner).deposit({
+      value: ethers.parseEther('10'),
+    });
+    await IWETH.connect(owner).transfer(address, ethers.parseEther('10'));
   });
 
   it('flashLoanAndSwap', async function () {

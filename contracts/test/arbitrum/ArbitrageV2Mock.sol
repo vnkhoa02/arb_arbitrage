@@ -33,24 +33,20 @@ contract ArbitrageV2Mock is FlashLoanProvider {
         amounts[0] = borrowAmount;
 
         // Encode swap data for later use
-        bytes memory data = abi.encode(tokenIn, tokenOut, path, minAmountOut);
+        bytes memory data = abi.encode(tokenOut, path, minAmountOut);
 
         flashLoan(tokens, amounts, data);
     }
 
     /// @dev Called after flashloan funds are received
     function _executeOperation(
-        address,
+        address borrowedToken,
         uint256 amountBorrowed,
         uint256 fee,
         bytes memory userData
     ) internal override {
-        (
-            address borrowedToken,
-            address targetToken,
-            bytes memory path,
-            uint256 minAmountOut
-        ) = abi.decode(userData, (address, address, bytes, uint256));
+        (address targetToken, bytes memory path, uint256 minAmountOut) = abi
+            .decode(userData, (address, bytes, uint256));
 
         console.log('Flash loan received:', amountBorrowed);
         console.log('Borrowed Token:', borrowedToken);
@@ -83,4 +79,7 @@ contract ArbitrageV2Mock is FlashLoanProvider {
             'Not enough to repay loan'
         );
     }
+
+    // allow contract to receive ETH
+    receive() external payable {}
 }
