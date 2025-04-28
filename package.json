@@ -10,8 +10,8 @@
     "clean": "hardhat clean",
     "compile": "hardhat clean && hardhat compile",
     "test": "npm run compile && hardhat test",
-    "deploy:verify": "hardhat deploy --tags Simulate --network hardhat",
-    "deploy:prod": "hardhat deploy --tags Arbitrage --network mainnet",
+    "deploy:verify": "npx hardhat deploy --tags Simulate --network hardhat",
+    "deploy:prod": "npx hardhat deploy --tags Arbitrage --network mainnet",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "dependencies": {

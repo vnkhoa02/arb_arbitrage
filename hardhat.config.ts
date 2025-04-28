@@ -9,7 +9,7 @@ import type { HardhatUserConfig } from 'hardhat/config';
 const config: HardhatUserConfig = {
   solidity: '0.8.28',
   paths: {
-    deploy: path.join(__dirname, 'scripts/deploy'),
+    deploy: path.join(__dirname, 'scripts/deploy/arbitrum'),
   },
   networks: {
     hardhat: {
@@ -25,9 +25,7 @@ const config: HardhatUserConfig = {
     // },
     arbMainnet: {
       url: process.env.INFURA_ARBITRUM_MAINNET_URL,
-      accounts: process.env.TEST_PRIVATE_KEY
-        ? [process.env.TEST_PRIVATE_KEY]
-        : [],
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 42161,
     },
   },
