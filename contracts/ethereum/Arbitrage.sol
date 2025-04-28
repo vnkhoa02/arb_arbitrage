@@ -5,7 +5,7 @@ import 'hardhat/console.sol';
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 
-import {FlashLoanProvider} from './FlashLoanProvider.sol';
+import {FlashLoanProvider} from '../FlashLoanProvider.sol';
 
 contract Arbitrage is FlashLoanProvider {
     ISwapRouter public constant swapRouter =

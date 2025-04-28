@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { ethers, network } from 'hardhat';
-import { BALANCER_VAULT, WETH } from '../shared/mainnet_addr';
-import type { FlashLoanProviderMock } from '../typechain-types';
+import { BALANCER_VAULT, WETH } from '../../shared/mainnet_addr';
+import type { FlashLoanProviderMock } from '../../typechain-types';
 
 describe('FlashLoanProvider', function () {
   let mock: FlashLoanProviderMock;

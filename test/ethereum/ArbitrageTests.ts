@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { findBestPath, pickBestRoute } from '../scripts/helpers/getQuote';
-import { DAI, SAITO } from '../shared/mainnet_addr';
-import { Arbitrage } from '../typechain-types';
+import { findBestPath, pickBestRoute } from '../../scripts/helpers/getQuote';
+import { DAI, SAITO } from '../../shared/mainnet_addr';
+import { Arbitrage } from '../../typechain-types';
 import { parseUnits } from 'ethers';
 
 describe('Arbitrage Tests', () => {
