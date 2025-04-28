@@ -15,6 +15,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: process.env.INFURA_ARBITRUM_MAINNET_URL as string,
+        blockNumber: 331152474,
       },
     },
     // mainnet: {
