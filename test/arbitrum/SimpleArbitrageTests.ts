@@ -1,8 +1,7 @@
-import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { encodePath } from '../../scripts/helpers/encode';
-import { USDC, WETH } from '../../shared/arbitrum/mainnet_addr';
-import { SimpleArbitrage } from '../../typechain-types';
+import { encodeParams } from '../../scripts/helpers/encode';
+import type { SimpleArbitrage } from '../../typechain-types';
+import { mockRoute } from './mockData/routes';
 
 describe.only('SimpleArbitrage Arbitrum', () => {
   const BORROW_AMOUNT = ethers.parseEther('1'); // 1 WETH
@@ -17,31 +16,19 @@ describe.only('SimpleArbitrage Arbitrum', () => {
     await arbitrage.waitForDeployment();
   });
 
-  it('simpleArbitrage', async function () {
-    // Example forward path: WETH -> USDC (0.05% fee)
-    const forwardPath = encodePath([WETH, USDC], [500]);
+  it('simpleArbitrage does not revert with mockRoute', async function () {
+    const forwardPaths = mockRoute.forward.route.map((r) => encodeParams(r));
+    const backwardPaths = mockRoute.backward.route.map((r) => encodeParams(r));
 
-    // Example backward path: USDC -> WETH (0.05% fee)
-    const backwardPath = encodePath([USDC, WETH], [500]);
-
-    const tx = arbitrage.connect(owner).simpleArbitrage(
-      WETH,
-      USDC,
-      [
-        ethers.solidityPacked(
-          ['uint256', 'bytes'],
-          [BORROW_AMOUNT, forwardPath],
-        ),
-      ], // forwardPaths[]
-      [
-        ethers.solidityPacked(
-          ['uint256', 'bytes'],
-          [BORROW_AMOUNT, backwardPath],
-        ),
-      ], // backwardPaths[]
-      BORROW_AMOUNT,
-    );
-
-    await expect(tx).to.not.be.reverted;
+    const tx = await arbitrage
+      .connect(owner)
+      .simpleArbitrage(
+        mockRoute.forward.tokenIn,
+        mockRoute.forward.tokenOut,
+        forwardPaths,
+        backwardPaths,
+        BORROW_AMOUNT,
+      );
+    await tx.wait();
   });
 });
