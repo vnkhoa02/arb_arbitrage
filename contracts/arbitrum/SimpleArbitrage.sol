@@ -10,22 +10,19 @@ contract SimpleArbitrage is FlashLoanProvider {
     ISwapRouter private constant swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
-    /// @notice Initiates a flash-loan-backed arbitrage with custom Uniswap V3 paths
-    /// @param tokenIn        The initial token to borrow and swap
-    /// @param tokenOut       The intermediate token after forward swap
-    /// @param forwardPath    Uniswap V3 path bytes for forward leg (tokenIn → ... → tokenOut)
-    /// @param backwardPath   Uniswap V3 path bytes for backward leg (tokenOut → ... → tokenIn)
-    /// @param borrowAmount   Amount of tokenIn to borrow and start with (TokenIn Amount)
     function simpleArbitrage(
         address tokenIn,
         address tokenOut,
-        bytes calldata forwardPath,
-        uint256 forwardOutMin,
-        bytes calldata backwardPath,
-        uint256 backwardOutMin,
+        bytes[] calldata forwardPaths,
+        bytes[] calldata backwardPaths,
         uint256 borrowAmount
     ) external onlyOwner {
         require(borrowAmount > 0, 'Invalid borrow amount');
+
+        console.log('Initiating arbitrage:');
+        console.log('TokenIn:', tokenIn);
+        console.log('TokenOut:', tokenOut);
+        console.log('Borrow Amount:', borrowAmount);
 
         // Prepare flash loan arguments
         address[] memory tokens = new address[](1);
@@ -33,14 +30,11 @@ contract SimpleArbitrage is FlashLoanProvider {
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = borrowAmount;
 
-        // Encode paths and tokens for callback
         bytes memory data = abi.encode(
             tokenIn,
             tokenOut,
-            forwardPath,
-            forwardOutMin,
-            backwardPath,
-            backwardOutMin
+            forwardPaths,
+            backwardPaths
         );
 
         flashLoan(tokens, amounts, data);
@@ -53,62 +47,81 @@ contract SimpleArbitrage is FlashLoanProvider {
         uint256 fee,
         bytes memory userData
     ) internal override {
-        // Decode inputs
         (
             address tokenIn,
             address tokenOut,
-            bytes memory forwardPath,
-            uint256 forwardOutMin,
-            bytes memory backwardPath,
-            uint256 backwardOutMin
-        ) = abi.decode(
-                userData,
-                (address, address, bytes, uint256, bytes, uint256)
-            );
+            bytes memory forwardPathsEncoded,
+            bytes memory backwardPathsEncoded
+        ) = abi.decode(userData, (address, address, bytes, bytes));
 
-        // Log the decoded values
-        console.log('Executing operation with loan amount:', amount);
+        console.log('Flash loan received:');
         console.log('TokenIn:', tokenIn);
         console.log('TokenOut:', tokenOut);
-        console.log('Amount to Swap:', amount);
-        console.log('Fee:', fee);
-        console.log('ForwardOutMin:', forwardOutMin);
+        console.log('Loan amount:', amount);
+        console.log('Loan fee:', fee);
 
-        // 1) Forward multihop swap: tokenIn -> tokenOut
-        TransferHelper.safeApprove(tokenIn, address(swapRouter), amount);
-        uint256 outAmount = swapRouter.exactInput(
-            ISwapRouter.ExactInputParams({
-                path: forwardPath,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: amount,
-                amountOutMinimum: forwardOutMin
-            })
+        bytes[] memory forwardPaths = abi.decode(
+            forwardPathsEncoded,
+            (bytes[])
+        );
+        bytes[] memory backwardPaths = abi.decode(
+            backwardPathsEncoded,
+            (bytes[])
         );
 
-        // Log the output amount from the forward swap
-        console.log('Output Amount from Forward Swap:', outAmount);
-        require(outAmount > 0, 'Forward swap failed');
+        uint256 outAmount;
 
-        console.log('backwardOutMin:', backwardOutMin);
+        // 1. Forward swaps
+        for (uint256 i = 0; i < forwardPaths.length; i++) {
+            (uint256 amountIn, bytes memory path) = abi.decode(
+                forwardPaths[i],
+                (uint256, bytes)
+            );
 
-        // 2) Backward multihop swap: tokenOut -> tokenIn
-        TransferHelper.safeApprove(tokenOut, address(swapRouter), outAmount);
-        uint256 finalAmount = swapRouter.exactInput(
-            ISwapRouter.ExactInputParams({
-                path: backwardPath,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: outAmount,
-                amountOutMinimum: backwardOutMin
-            })
-        );
+            console.log('Forward swap #%s', i);
+            console.log('AmountIn:', amountIn);
+            console.logBytes(path);
 
-        // Log the final amount after the backward swap
-        console.log('Final Amount from Backward Swap:', finalAmount);
+            TransferHelper.safeApprove(tokenIn, address(swapRouter), amountIn);
+            outAmount = swapRouter.exactInput(
+                ISwapRouter.ExactInputParams({
+                    path: path,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: amountIn,
+                    amountOutMinimum: 0
+                })
+            );
+        }
 
-        // Profit check: final received must cover loan + fee
+        // 2. Backward swaps (tokenOut -> tokenIn)
+        uint256 finalAmount;
+        for (uint256 i = 0; i < backwardPaths.length; i++) {
+            (uint256 amountIn, bytes memory path) = abi.decode(
+                backwardPaths[i],
+                (uint256, bytes)
+            );
+
+            console.log('Backward swap #%s', i);
+            console.log('AmountIn:', amountIn);
+            console.logBytes(path);
+
+            TransferHelper.safeApprove(tokenOut, address(swapRouter), amountIn);
+            finalAmount = swapRouter.exactInput(
+                ISwapRouter.ExactInputParams({
+                    path: path,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: amountIn,
+                    amountOutMinimum: 0
+                })
+            );
+        }
+
+        console.log('Final amount after backward swaps:', finalAmount);
+        console.log('Total debt (loan + fee):', amount + fee);
+
+        // Final profit check
         require(finalAmount > amount + fee, 'Arbitrage not profitable');
-        console.log('Profit:', finalAmount - amount - fee);
     }
 }
