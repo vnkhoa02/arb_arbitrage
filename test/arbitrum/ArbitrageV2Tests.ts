@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
-import { encodePath } from '../../scripts/helpers/encode';
+import { encodeParams } from '../../scripts/helpers/encode';
 import { USDC, WETH } from '../../shared/arbitrum/mainnet_addr';
 import { ArbitrageV2 } from '../../typechain-types';
+import { mockRoute } from './mockData/routes';
 
 describe('ArbitrageV2 Arbitrum', () => {
   const BORROW_AMOUNT = ethers.parseEther('1'); // 1 WETH (assuming decimals=18)
@@ -19,12 +20,11 @@ describe('ArbitrageV2 Arbitrum', () => {
   });
 
   it('arbitrageDexes', async function () {
-    // Encode path (WETH -> USDC with 0.05% fee tier)
-    const path = encodePath([WETH, USDC], [500]);
+    const forwardPaths = mockRoute.forward.route.map((r) => encodeParams(r));
 
     const tx = arbitrage
       .connect(owner)
-      .arbitrageDexes(path, WETH, USDC, BORROW_AMOUNT);
+      .arbitrageDexes(forwardPaths, WETH, USDC, BORROW_AMOUNT);
 
     await expect(tx).to.not.be.reverted;
   });

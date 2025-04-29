@@ -1,9 +1,10 @@
+import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { encodeParams } from '../../scripts/helpers/encode';
 import type { SimpleArbitrage } from '../../typechain-types';
 import { mockRoute } from './mockData/routes';
 
-describe.only('SimpleArbitrage Arbitrum', () => {
+describe('SimpleArbitrage Arbitrum', () => {
   const BORROW_AMOUNT = ethers.parseEther('1'); // 1 WETH
 
   let arbitrage: SimpleArbitrage;
@@ -20,7 +21,7 @@ describe.only('SimpleArbitrage Arbitrum', () => {
     const forwardPaths = mockRoute.forward.route.map((r) => encodeParams(r));
     const backwardPaths = mockRoute.backward.route.map((r) => encodeParams(r));
 
-    const tx = await arbitrage
+    const tx = arbitrage
       .connect(owner)
       .simpleArbitrage(
         mockRoute.forward.tokenIn,
@@ -29,6 +30,6 @@ describe.only('SimpleArbitrage Arbitrum', () => {
         backwardPaths,
         BORROW_AMOUNT,
       );
-    await tx.wait();
+    await expect(tx).to.not.be.reverted;
   });
 });
