@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { ethers, network } from 'hardhat';
-import { BALANCER_VAULT, WETH } from '../../shared/arbitrum/mainnet_addr';
+import { ethers } from 'hardhat';
+import { WETH } from '../../shared/arbitrum/mainnet_addr';
 import { FlashLoanProviderMock } from '../../typechain-types';
 
 describe('FlashLoanProvider Arbitrum', function () {
@@ -15,12 +15,6 @@ describe('FlashLoanProvider Arbitrum', function () {
     );
     mock = (await Factory.deploy()) as FlashLoanProviderMock;
     await mock.waitForDeployment();
-
-    // 2) Impersonate the Balancer Vault account
-    await network.provider.request({
-      method: 'hardhat_impersonateAccount',
-      params: [BALANCER_VAULT],
-    });
   });
 
   it('reverts if receiveFlashLoan is not called by vault', async function () {

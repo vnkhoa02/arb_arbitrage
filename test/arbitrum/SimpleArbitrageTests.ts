@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { ethers } from 'hardhat';
+import { ethers, tenderly } from 'hardhat';
 import { encodeParams } from '../../scripts/helpers/encode';
 import type { SimpleArbitrage } from '../../typechain-types';
 import { mockRoute } from './mockData/routes';
@@ -15,6 +15,12 @@ describe('SimpleArbitrage Arbitrum', () => {
     const Factory = await ethers.getContractFactory('SimpleArbitrage', owner);
     arbitrage = (await Factory.deploy()) as SimpleArbitrage;
     await arbitrage.waitForDeployment();
+    const address = await arbitrage.getAddress();
+
+    await tenderly.persistArtifacts({
+      name: 'SimpleArbitrage',
+      address,
+    });
   });
 
   it('simpleArbitrage does not revert with mockRoute', async function () {

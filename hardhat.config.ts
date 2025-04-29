@@ -3,13 +3,20 @@ import 'dotenv/config';
 import 'hardhat-deploy';
 import '@nomicfoundation/hardhat-ethers';
 import '@nomicfoundation/hardhat-chai-matchers';
+import '@nomicfoundation/hardhat-toolbox';
 import '@typechain/hardhat';
 import type { HardhatUserConfig } from 'hardhat/config';
+import '@tenderly/hardhat-tenderly';
 
 const config: HardhatUserConfig = {
   solidity: '0.8.28',
   paths: {
     deploy: path.join(__dirname, 'scripts/deploy/arbitrum'),
+  },
+  tenderly: {
+    project: 'project',
+    username: 'khoacaro96',
+    privateVerification: process.env.TENDERLY_PUBLIC_VERIFICATION !== 'true',
   },
   networks: {
     hardhat: {
