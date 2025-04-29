@@ -1,5 +1,6 @@
-import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { tenderly } from 'hardhat';
 import { DeployFunction } from 'hardhat-deploy/types';
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 const deployArbitrageArb: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment,
@@ -15,12 +16,23 @@ const deployArbitrageArb: DeployFunction = async function (
     log: true,
     waitConfirmations: 3,
   });
+
+  await tenderly.verify({
+    name: 'SimpleArbitrage',
+    address: ArbitrageV2.address,
+  });
+
   console.log('✅ 1/2 Deploy success! Address:', ArbitrageV2.address);
 
   const SimpleArbitrage = await deploy('SimpleArbitrage', {
     from: deployer,
     log: true,
     waitConfirmations: 3,
+  });
+
+  await tenderly.verify({
+    name: 'SimpleArbitrage',
+    address: SimpleArbitrage.address,
   });
 
   console.log('✅ 2/2 Deploy success! Address:', SimpleArbitrage.address);

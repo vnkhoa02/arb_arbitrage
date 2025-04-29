@@ -10,7 +10,7 @@
     "clean": "hardhat clean",
     "compile": "hardhat clean && hardhat compile",
     "test": "hardhat test",
-    "spawn-devnet-to-hardhat": "ts-node lib/devnet-fresh.ts",
+    "deploy:verify": "npx hardhat deploy --tags Simulate --network hardhat",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "dependencies": {

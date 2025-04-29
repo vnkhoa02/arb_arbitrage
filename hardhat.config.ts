@@ -26,7 +26,8 @@ const config: HardhatUserConfig = {
       },
     },
     tenderly: {
-      url: process.env.TENDERLY_ARBITRUM_MAINNET_URL as string,
+      chainId: 42161,
+      url: process.env.TENDERLY_ARBITRUM_TEST_NET_URL as string,
     },
     // mainnet: {
     //   url: process.env.INFURA_MAINNET_URL,
