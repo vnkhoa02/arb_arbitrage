@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
 import { encodeParams } from '../../scripts/helpers/encode';
-import { USDC, WETH } from '../../shared/arbitrum/mainnet_addr';
+import { USDT, WETH } from '../../shared/arbitrum/mainnet_addr';
 import { ArbitrageV2 } from '../../typechain-types';
 import { mockRoute } from './mockData/routes';
 
@@ -24,7 +24,7 @@ describe('ArbitrageV2 Arbitrum', () => {
 
     const tx = arbitrage
       .connect(owner)
-      .arbitrageDexes(forwardPaths, WETH, USDC, BORROW_AMOUNT);
+      .arbitrageDexes(forwardPaths, WETH, USDT, BORROW_AMOUNT);
 
     await expect(tx).to.not.be.reverted;
   });

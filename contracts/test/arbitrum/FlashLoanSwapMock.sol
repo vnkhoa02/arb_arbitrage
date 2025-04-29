@@ -11,18 +11,11 @@ contract FlashLoanSwapMock is FlashLoanProvider {
     ISwapRouter public constant swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
-    /// @notice Initiates a flash loan and then swaps tokenIn to tokenOut
-    /// @param tokenIn  Token to borrow
-    /// @param tokenOut Token to swap to
-    /// @param path     Uniswap V3 path (tokenIn -> tokenOut)
-    /// @param borrowAmount Amount of tokenIn to flash loan
-    /// @param minAmountOut Minimum amount of tokenOut expected from swap
     function flashLoanAndSwap(
+        bytes[] calldata forwardPaths,
         address tokenIn,
         address tokenOut,
-        bytes calldata path,
-        uint256 borrowAmount,
-        uint256 minAmountOut
+        uint256 borrowAmount
     ) external onlyOwner {
         require(borrowAmount > 0, 'Amount must be > 0');
 
@@ -33,7 +26,7 @@ contract FlashLoanSwapMock is FlashLoanProvider {
         amounts[0] = borrowAmount;
 
         // Encode swap data for later use
-        bytes memory data = abi.encode(tokenOut, path, minAmountOut);
+        bytes memory data = abi.encode(tokenOut, forwardPaths);
 
         flashLoan(tokens, amounts, data);
     }
@@ -45,32 +38,41 @@ contract FlashLoanSwapMock is FlashLoanProvider {
         uint256 fee,
         bytes memory userData
     ) internal override {
-        (address targetToken, bytes memory path, uint256 minAmountOut) = abi
-            .decode(userData, (address, bytes, uint256));
+        (address targetToken, bytes[] memory forwardPaths) = abi.decode(
+            userData,
+            (address, bytes[])
+        );
 
         console.log('Flash loan received:', amountBorrowed);
         console.log('Borrowed Token:', borrowedToken);
         console.log('Target Token:', targetToken);
 
-        // Approve Uniswap router to spend borrowed token
         TransferHelper.safeApprove(
             borrowedToken,
             address(swapRouter),
             amountBorrowed
         );
 
-        // Perform the swap
-        uint256 amountOut = swapRouter.exactInput(
-            ISwapRouter.ExactInputParams({
-                path: path,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: amountBorrowed,
-                amountOutMinimum: minAmountOut
-            })
-        );
-
-        console.log('Swapped. Received:', amountOut);
+        uint256 outAmount;
+        for (uint256 i = 0; i < forwardPaths.length; i++) {
+            (uint256 amountIn, bytes memory path) = abi.decode(
+                forwardPaths[i],
+                (uint256, bytes)
+            );
+            console.log('Forward swap #%s', i);
+            console.log('AmountIn:', amountIn);
+            console.logBytes(path);
+            outAmount += swapRouter.exactInput(
+                ISwapRouter.ExactInputParams({
+                    path: path,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: amountIn,
+                    amountOutMinimum: 0
+                })
+            );
+            console.log('AmountOut:', outAmount);
+        }
 
         // Repay flash loan
         uint256 totalDebt = amountBorrowed + fee;

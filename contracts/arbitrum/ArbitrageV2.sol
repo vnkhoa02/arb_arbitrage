@@ -37,8 +37,8 @@ contract ArbitrageV2 is FlashLoanProvider {
 
     /// @dev Called by FlashLoanProvider after loan is received
     function _executeOperation(
-        address tokenIn, // loanToken
-        uint256 loanAmount,
+        address borrowedToken, // loanToken
+        uint256 amountBorrowed,
         uint256 fee,
         bytes memory userData
     ) internal override {
@@ -48,25 +48,25 @@ contract ArbitrageV2 is FlashLoanProvider {
             (address, bytes[])
         );
         // Log the decoded values
-        console.log('Executing operation with loan amount:', loanAmount);
-        console.log('TokenIn:', tokenIn);
+        console.log('Executing operation with loan amount:', amountBorrowed);
+        console.log('borrowedToken:', borrowedToken);
         console.log('TokenOut:', tokenOut);
         console.log('Fee:', fee);
 
         // 1. Get the output amount from Uniswap (tokenIn -> tokenOut)
-        uint256 amountOut0 = swapUni(forwardPaths, tokenIn);
+        uint256 amountOut0 = swapUni(forwardPaths, borrowedToken);
         console.log('amountOut0:', amountOut0);
 
         // 2. Get the output amount from PancakeSwap (tokenOut -> tokenIn)
-        uint256 amountOut1 = swapPancake(tokenOut, tokenIn, amountOut0);
+        uint256 amountOut1 = swapPancake(tokenOut, borrowedToken, amountOut0);
         console.log('amountOut1:', amountOut1);
 
         // 3. Calculate if arbitrage is profitable (amountOut1 > amountIn)
-        require(amountOut1 > loanAmount, 'Arbitrage not profitable');
+        require(amountOut1 > amountBorrowed, 'Arbitrage not profitable');
 
         console.log(
             'Arbitrage Successful: Profit from arbitrage:',
-            amountOut1 - loanAmount
+            amountOut1 - amountBorrowed
         );
     }
 
@@ -85,7 +85,7 @@ contract ArbitrageV2 is FlashLoanProvider {
             console.logBytes(path);
 
             TransferHelper.safeApprove(tokenIn, address(swapRouter), amountIn);
-            outAmount = swapRouter.exactInput(
+            outAmount += swapRouter.exactInput(
                 ISwapRouter.ExactInputParams({
                     path: path,
                     recipient: address(this),

@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
-import { encodePath } from '../../scripts/helpers/encode';
-import { USDC, WETH } from '../../shared/arbitrum/mainnet_addr';
+import { encodeParams } from '../../scripts/helpers/encode';
+import { USDT, WETH } from '../../shared/arbitrum/mainnet_addr';
 import { FlashLoanSwapMock } from '../../typechain-types';
+import { mockRoute } from './mockData/routes';
 
 describe('FlashLoanSwapMock', () => {
   const BORROW_AMOUNT = ethers.parseEther('1'); // 1 WETH (assuming decimals=18)
@@ -25,18 +26,11 @@ describe('FlashLoanSwapMock', () => {
   });
 
   it('flashLoanAndSwap', async function () {
-    // Encode path (WETH -> USDC with 0.05% fee tier)
-    const path = encodePath([WETH, USDC], [500]);
-
-    // Call the flashLoanAndSwap
+    const forwardPaths = mockRoute.forward.route.map((r) => encodeParams(r));
     await expect(
-      arbitrage.connect(owner).flashLoanAndSwap(
-        WETH,
-        USDC,
-        path,
-        BORROW_AMOUNT,
-        0, // Accept any amount out (for test purpose; in prod you set minAmountOut)
-      ),
+      arbitrage
+        .connect(owner)
+        .flashLoanAndSwap(forwardPaths, WETH, USDT, BORROW_AMOUNT),
     ).to.not.be.reverted;
   });
 });

@@ -37,8 +37,8 @@ contract SimpleArbitrage is FlashLoanProvider {
 
     /// @dev Called by FlashLoanProvider after loan is received
     function _executeOperation(
-        address, // loanToken
-        uint256 amount,
+        address borrowedToken, // loanToken
+        uint256 amountBorrowed,
         uint256 fee,
         bytes memory userData
     ) internal override {
@@ -48,6 +48,12 @@ contract SimpleArbitrage is FlashLoanProvider {
             bytes[] memory forwardPaths,
             bytes[] memory backwardPaths
         ) = abi.decode(userData, (address, address, bytes[], bytes[]));
+
+        TransferHelper.safeApprove(
+            borrowedToken,
+            address(swapRouter),
+            amountBorrowed
+        );
 
         // 1. Forward swaps
         uint256 outAmount;
@@ -60,8 +66,7 @@ contract SimpleArbitrage is FlashLoanProvider {
             console.log('AmountIn:', amountIn);
             console.logBytes(path);
 
-            TransferHelper.safeApprove(tokenIn, address(swapRouter), amountIn);
-            outAmount = swapRouter.exactInput(
+            outAmount += swapRouter.exactInput(
                 ISwapRouter.ExactInputParams({
                     path: path,
                     recipient: address(this),
@@ -86,7 +91,7 @@ contract SimpleArbitrage is FlashLoanProvider {
             console.logBytes(path);
 
             TransferHelper.safeApprove(tokenOut, address(swapRouter), amountIn);
-            finalAmount = swapRouter.exactInput(
+            finalAmount += swapRouter.exactInput(
                 ISwapRouter.ExactInputParams({
                     path: path,
                     recipient: address(this),
@@ -99,9 +104,9 @@ contract SimpleArbitrage is FlashLoanProvider {
         }
 
         console.log('Final amount after backward swaps:', finalAmount);
-        console.log('Total debt (loan + fee):', amount + fee);
+        console.log('Total debt (loan + fee):', amountBorrowed + fee);
 
         // Final profit check
-        require(finalAmount > amount + fee, 'Arbitrage not profitable');
+        require(finalAmount > amountBorrowed + fee, 'Arbitrage not profitable');
     }
 }
