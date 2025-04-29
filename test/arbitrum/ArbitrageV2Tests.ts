@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
-import { encodeParams } from '../../scripts/helpers/encode';
 import { USDT, WETH } from '../../shared/arbitrum/mainnet_addr';
 import { ArbitrageV2 } from '../../typechain-types';
 import { mockRoute } from './mockData/routes';
+import { encodeParams } from '../../shared/lib/helpers/encode';
 
 describe('ArbitrageV2 Arbitrum', () => {
   const BORROW_AMOUNT = ethers.parseEther('1'); // 1 WETH (assuming decimals=18)

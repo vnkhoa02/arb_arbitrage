@@ -9,9 +9,8 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "clean": "hardhat clean",
     "compile": "hardhat clean && hardhat compile",
-    "test": "npm run compile && hardhat test",
-    "deploy:verify": "npx hardhat deploy --tags Simulate --network hardhat",
-    "deploy:prod": "npx hardhat deploy --tags Arbitrage --network mainnet",
+    "test": "hardhat test",
+    "spawn-devnet-to-hardhat": "ts-node lib/devnet-fresh.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "dependencies": {

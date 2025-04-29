@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { findBestPath, pickBestRoute } from '../../scripts/helpers/getQuote';
 import { DAI, SAITO } from '../../shared/mainnet_addr';
 import { Arbitrage } from '../../typechain-types';
 import { parseUnits } from 'ethers';
+import { findBestPath, pickBestRoute } from '../../shared/lib/helpers/getQuote';
 
 describe('Arbitrage Tests', () => {
   const BORROW_AMOUNT = 1000; // 1000 USD

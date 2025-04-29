@@ -25,6 +25,9 @@ const config: HardhatUserConfig = {
         // blockNumber: 331152474,
       },
     },
+    tenderly: {
+      url: process.env.TENDERLY_ARBITRUM_MAINNET_URL as string,
+    },
     // mainnet: {
     //   url: process.env.INFURA_MAINNET_URL,
     //   accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
