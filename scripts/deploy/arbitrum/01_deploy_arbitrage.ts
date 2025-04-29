@@ -1,4 +1,3 @@
-import { tenderly } from 'hardhat';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
@@ -28,11 +27,6 @@ const deployArbitrageArb: DeployFunction = async function (
     from: deployer,
     log: true,
     waitConfirmations: 3,
-  });
-
-  await tenderly.verify({
-    name: 'SimpleArbitrage',
-    address: SimpleArbitrage.address,
   });
 
   console.log('✅ 2/2 Deploy success! Address:', SimpleArbitrage.address);

@@ -8,8 +8,9 @@
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "clean": "hardhat clean",
-    "compile": "hardhat clean && hardhat compile",
-    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "t:fork:clean": "ts-node scripts/cleanTenderlyForks.ts",
+    "test": "npm run compile && hardhat test --network vitrualMainnet",
     "deploy:verify": "npx hardhat deploy --tags Simulate --network hardhat",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
@@ -37,7 +38,7 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "ethers": "^6.13.5",
-    "hardhat": "^2.23.0",
+    "hardhat": "^2.20.0",
     "hardhat-deploy": "^1.0.2",
     "prettier": "^2.8.8",
     "source-map-support": "^0.5.21",

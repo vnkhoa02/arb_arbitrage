@@ -1,5 +1,5 @@
 import { AbiCoder, ethers } from 'ethers';
-import { Route } from '../types/quote';
+import { Route } from '../../types/quote';
 
 /**
  * Reconstructs the UniswapV3 path bytes (tokenIn + fee + tokenOut) from one hop-array

@@ -16,9 +16,9 @@ const config: HardhatUserConfig = {
     deploy: path.join(__dirname, 'scripts/deploy/arbitrum'),
   },
   tenderly: {
-    project: 'project',
-    username: 'khoacaro96',
-    privateVerification: process.env.TENDERLY_PUBLIC_VERIFICATION !== 'true',
+    project: process.env.TENDERLY_PROJECT as string,
+    username: process.env.TENDERLY_USER as string,
+    privateVerification: true,
   },
   networks: {
     hardhat: {
@@ -27,9 +27,9 @@ const config: HardhatUserConfig = {
         // blockNumber: 331152474,
       },
     },
-    tenderly: {
+    vitrualMainnet: {
       chainId: 42161,
-      url: process.env.TENDERLY_ARBITRUM_TEST_NET_URL as string,
+      url: process.env.VIRTUAL_MAINNET_RPC_URL as string,
     },
     // mainnet: {
     //   url: process.env.INFURA_MAINNET_URL,
