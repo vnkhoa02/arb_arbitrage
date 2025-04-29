@@ -16,7 +16,7 @@ contract ArbitrageV2 is FlashLoanProvider {
 
     // Perform the arbitrage between Uniswap -> PancakeSwap
     function arbitrageDexes(
-        bytes memory forwardPath,
+        bytes[] calldata forwardPaths,
         address tokenIn,
         address tokenOut,
         uint256 amountIn
@@ -30,7 +30,7 @@ contract ArbitrageV2 is FlashLoanProvider {
         amounts[0] = amountIn;
 
         // Encode paths and tokens for callback
-        bytes memory data = abi.encode(tokenOut, forwardPath);
+        bytes memory data = abi.encode(tokenOut, forwardPaths);
 
         flashLoan(tokens, amounts, data);
     }
@@ -38,24 +38,23 @@ contract ArbitrageV2 is FlashLoanProvider {
     /// @dev Called by FlashLoanProvider after loan is received
     function _executeOperation(
         address tokenIn, // loanToken
-        uint256 amountIn,
+        uint256 loanAmount,
         uint256 fee,
         bytes memory userData
     ) internal override {
         // Decode inputs
-        (address tokenOut, bytes memory forwardPath) = abi.decode(
+        (address tokenOut, bytes[] memory forwardPaths) = abi.decode(
             userData,
-            (address, bytes)
+            (address, bytes[])
         );
-
         // Log the decoded values
-        console.log('Executing operation with loan amount:', amountIn);
+        console.log('Executing operation with loan amount:', loanAmount);
         console.log('TokenIn:', tokenIn);
         console.log('TokenOut:', tokenOut);
         console.log('Fee:', fee);
 
         // 1. Get the output amount from Uniswap (tokenIn -> tokenOut)
-        uint256 amountOut0 = swapUni(forwardPath, tokenIn, amountIn);
+        uint256 amountOut0 = swapUni(forwardPaths, tokenIn);
         console.log('amountOut0:', amountOut0);
 
         // 2. Get the output amount from PancakeSwap (tokenOut -> tokenIn)
@@ -63,30 +62,40 @@ contract ArbitrageV2 is FlashLoanProvider {
         console.log('amountOut1:', amountOut1);
 
         // 3. Calculate if arbitrage is profitable (amountOut1 > amountIn)
-        require(amountOut1 > amountIn, 'Arbitrage not profitable');
+        require(amountOut1 > loanAmount, 'Arbitrage not profitable');
 
         console.log(
             'Arbitrage Successful: Profit from arbitrage:',
-            amountOut1 - amountIn
+            amountOut1 - loanAmount
         );
     }
 
     // Function to get quote from Uniswap V3
     function swapUni(
-        bytes memory path,
-        address tokenIn,
-        uint256 amountIn
-    ) internal returns (uint256 amountOut) {
-        TransferHelper.safeApprove(tokenIn, address(swapRouter), amountIn);
-        amountOut = swapRouter.exactInput(
-            ISwapRouter.ExactInputParams({
-                path: path,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: amountIn,
-                amountOutMinimum: 0
-            })
-        );
+        bytes[] memory forwardPaths,
+        address tokenIn
+    ) internal returns (uint256 outAmount) {
+        for (uint256 i = 0; i < forwardPaths.length; i++) {
+            (uint256 amountIn, bytes memory path) = abi.decode(
+                forwardPaths[i],
+                (uint256, bytes)
+            );
+            console.log('Forward swap #%s', i);
+            console.log('AmountIn:', amountIn);
+            console.logBytes(path);
+
+            TransferHelper.safeApprove(tokenIn, address(swapRouter), amountIn);
+            outAmount = swapRouter.exactInput(
+                ISwapRouter.ExactInputParams({
+                    path: path,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: amountIn,
+                    amountOutMinimum: 0
+                })
+            );
+            console.log('AmountOut:', outAmount);
+        }
     }
 
     function swapPancake(
