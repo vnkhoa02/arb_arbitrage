@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@balancer-labs/v2-interfaces/contracts/vault/IVault.sol';
 import '@balancer-labs/v2-interfaces/contracts/vault/IFlashLoanRecipient.sol';
-import 'hardhat/console.sol';
 
 /**
  * @title FlashLoanProvider
  * @dev Abstract contract that handles Balancer V2 flash loans
  */
-abstract contract FlashLoanProvider is IFlashLoanRecipient {
+abstract contract FlashLoanProvider is IFlashLoanRecipient, ReentrancyGuard {
     address public owner;
 
     address constant VAULT_ADDRESS = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
@@ -61,7 +61,7 @@ abstract contract FlashLoanProvider is IFlashLoanRecipient {
                 userData
             );
             uint256 totalDebt = amounts[i] + feeAmounts[i];
-            IERC20(tokens[i]).transfer(address(vault), totalDebt); // full repayment
+            tokens[i].transfer(address(vault), totalDebt);
         }
     }
 

@@ -4,7 +4,7 @@ import type { SimpleArbitrage } from '../../typechain-types';
 import { mockRoute } from './mockData/routes';
 import { encodeParams } from '../../shared/lib/helpers/encode';
 
-describe.only('SimpleArbitrage Arbitrum', () => {
+describe('SimpleArbitrage Arbitrum', () => {
   const BORROW_AMOUNT = ethers.parseEther('1'); // 1 WETH
 
   let arbitrage: SimpleArbitrage;

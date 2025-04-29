@@ -8,6 +8,8 @@ import '@typechain/hardhat';
 import type { HardhatUserConfig } from 'hardhat/config';
 import '@tenderly/hardhat-tenderly';
 
+const PRIVATE_KEY = process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [];
+
 const config: HardhatUserConfig = {
   solidity: '0.8.28',
   paths: {
@@ -31,12 +33,12 @@ const config: HardhatUserConfig = {
     },
     // mainnet: {
     //   url: process.env.INFURA_MAINNET_URL,
-    //   accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    //   accounts: PRIVATE_KEY,
     //   chainId: 1,
     // },
     arbMainnet: {
       url: process.env.INFURA_ARBITRUM_MAINNET_URL,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      accounts: PRIVATE_KEY,
       chainId: 42161,
     },
   },

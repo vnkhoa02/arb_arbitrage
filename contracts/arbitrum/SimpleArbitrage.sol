@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-import 'hardhat/console.sol';
 import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 import {FlashLoanProvider} from '../FlashLoanProvider.sol';
@@ -9,6 +8,24 @@ import {FlashLoanProvider} from '../FlashLoanProvider.sol';
 contract SimpleArbitrage is FlashLoanProvider {
     ISwapRouter private constant swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+
+    struct Swap {
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+        bytes path;
+    }
+
+    event ArbitrageStarted(
+        address indexed tokenIn,
+        address indexed tokenOut,
+        uint256 amountBorrowed
+    );
+    event ArbitrageCompleted(
+        address indexed tokenIn,
+        address indexed tokenOut,
+        uint256 amountBorrowed,
+        uint256 profit
+    );
 
     function simpleArbitrage(
         address tokenIn,
@@ -18,6 +35,8 @@ contract SimpleArbitrage is FlashLoanProvider {
         uint256 borrowAmount
     ) external onlyOwner {
         require(borrowAmount > 0, 'Invalid borrow amount');
+
+        emit ArbitrageStarted(tokenIn, tokenOut, borrowAmount);
 
         // Prepare flash loan arguments
         address[] memory tokens = new address[](1);
@@ -32,75 +51,82 @@ contract SimpleArbitrage is FlashLoanProvider {
 
     /// @dev Called by FlashLoanProvider after loan is received
     function _executeOperation(
-        address borrowedToken, // loanToken
+        address borrowedToken,
         uint256 amountBorrowed,
         uint256 fee,
         bytes memory userData
-    ) internal override {
+    ) internal override nonReentrant {
         (
             address tokenOut,
-            bytes[] memory forwardPaths,
-            bytes[] memory backwardPaths
-        ) = abi.decode(userData, (address, bytes[], bytes[]));
+            Swap[] memory forwardSwaps,
+            Swap[] memory backwardSwaps
+        ) = abi.decode(userData, (address, Swap[], Swap[]));
 
+        // Approve router for borrowedToken
+        TransferHelper.safeApprove(borrowedToken, address(swapRouter), 0);
         TransferHelper.safeApprove(
             borrowedToken,
             address(swapRouter),
-            amountBorrowed
+            type(uint256).max
+        );
+        uint256 totalOut;
+
+        // Forward swaps: tokenIn -> tokenOut
+        for (uint256 i = 0; i < forwardSwaps.length; ) {
+            Swap memory s = forwardSwaps[i];
+            totalOut += swapRouter.exactInput(
+                ISwapRouter.ExactInputParams({
+                    path: s.path,
+                    recipient: address(this),
+                    deadline: block.timestamp + 1 minutes,
+                    amountIn: s.amountIn,
+                    amountOutMinimum: s.amountOutMinimum
+                })
+            );
+            unchecked {
+                i++;
+            }
+        }
+
+        // Approve router for tokenOut
+        TransferHelper.safeApprove(tokenOut, address(swapRouter), 0);
+        TransferHelper.safeApprove(
+            tokenOut,
+            address(swapRouter),
+            type(uint256).max
         );
 
-        // 1. Forward swaps
-        uint256 outAmount;
-        for (uint256 i = 0; i < forwardPaths.length; i++) {
-            (uint256 amountIn, bytes memory path) = abi.decode(
-                forwardPaths[i],
-                (uint256, bytes)
-            );
-            console.log('Forward swap #%s', i);
-            console.log('AmountIn:', amountIn);
-            console.logBytes(path);
+        uint256 totalFinal;
 
-            outAmount += swapRouter.exactInput(
+        // Backward swaps: tokenOut -> tokenIn
+        for (uint256 i = 0; i < backwardSwaps.length; ) {
+            Swap memory s = backwardSwaps[i];
+            totalFinal += swapRouter.exactInput(
                 ISwapRouter.ExactInputParams({
-                    path: path,
+                    path: s.path,
                     recipient: address(this),
-                    deadline: block.timestamp,
-                    amountIn: amountIn,
-                    amountOutMinimum: 0
+                    deadline: block.timestamp + 1 minutes,
+                    amountIn: s.amountIn,
+                    amountOutMinimum: s.amountOutMinimum
                 })
             );
-            console.log('outAmount:', outAmount);
+            unchecked {
+                i++;
+            }
         }
 
-        TransferHelper.safeApprove(tokenOut, address(swapRouter), outAmount);
-        // 2. Backward swaps (tokenOut -> tokenIn)
-        uint256 finalAmount;
-        for (uint256 i = 0; i < backwardPaths.length; i++) {
-            (uint256 amountIn, bytes memory path) = abi.decode(
-                backwardPaths[i],
-                (uint256, bytes)
-            );
+        uint256 totalDebt = amountBorrowed + fee;
+        require(totalFinal > totalDebt, 'Arbitrage not profitable');
 
-            console.log('Backward swap #%s', i);
-            console.log('AmountIn:', amountIn);
-            console.logBytes(path);
+        uint256 profit = totalFinal - totalDebt;
+        // Transfer profit to owner
+        TransferHelper.safeTransfer(borrowedToken, owner, profit);
 
-            finalAmount += swapRouter.exactInput(
-                ISwapRouter.ExactInputParams({
-                    path: path,
-                    recipient: address(this),
-                    deadline: block.timestamp,
-                    amountIn: amountIn,
-                    amountOutMinimum: 0
-                })
-            );
-            console.log('finalAmount:', finalAmount);
-        }
-
-        console.log('Final amount after backward swaps:', finalAmount);
-        console.log('Total debt (loan + fee):', amountBorrowed + fee);
-
-        // Final profit check
-        require(finalAmount > amountBorrowed + fee, 'Arbitrage not profitable');
+        emit ArbitrageCompleted(
+            borrowedToken,
+            tokenOut,
+            amountBorrowed,
+            profit
+        );
     }
 }

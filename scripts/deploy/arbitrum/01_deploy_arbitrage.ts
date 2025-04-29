@@ -11,18 +11,18 @@ const deployArbitrageArb: DeployFunction = async function (
 
   console.log('🔧 Deploying on Arbitrum mainnet...');
 
-  const ArbitrageV2 = await deploy('ArbitrageV2', {
-    from: deployer,
-    log: true,
-    waitConfirmations: 3,
-  });
+  // const ArbitrageV2 = await deploy('ArbitrageV2', {
+  //   from: deployer,
+  //   log: true,
+  //   waitConfirmations: 3,
+  // });
 
-  await tenderly.verify({
-    name: 'SimpleArbitrage',
-    address: ArbitrageV2.address,
-  });
+  // await tenderly.verify({
+  //   name: 'SimpleArbitrage',
+  //   address: ArbitrageV2.address,
+  // });
 
-  console.log('✅ 1/2 Deploy success! Address:', ArbitrageV2.address);
+  // console.log('✅ 1/2 Deploy success! Address:', ArbitrageV2.address);
 
   const SimpleArbitrage = await deploy('SimpleArbitrage', {
     from: deployer,
