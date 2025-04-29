@@ -33,4 +33,27 @@ describe('FlashLoanSwapMock', () => {
         .flashLoanAndSwap(forwardPaths, WETH, USDT, BORROW_AMOUNT),
     ).to.not.be.reverted;
   });
+
+  it('withdraw', async function () {
+    const usdt = await ethers.getContractAt(
+      '@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20',
+      USDT,
+    );
+    const contractAddress = await arbitrage.getAddress();
+
+    // Get balance before withdrawal
+    const balanceBefore = await usdt.balanceOf(owner.address);
+    console.log('balanceBefore', balanceBefore);
+    const contractBalance = await usdt.balanceOf(contractAddress);
+    console.log('contractBalance', contractBalance);
+
+    // Withdraw USDT from contract
+    await expect(arbitrage.connect(owner).withdrawToken(USDT)).to.not.be
+      .reverted;
+
+    // Check that owner's USDT balance increased by contract's balance
+    const balanceAfter = await usdt.balanceOf(owner.address);
+    console.log('balanceAfter', balanceAfter);
+    expect(balanceAfter).to.equal(balanceBefore + contractBalance);
+  });
 });

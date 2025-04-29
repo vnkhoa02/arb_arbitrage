@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import 'hardhat/console.sol';
-import '@pancakeswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
+import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 
 import {FlashLoanProvider} from '../FlashLoanProvider.sol';

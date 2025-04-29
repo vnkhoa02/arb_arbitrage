@@ -25,12 +25,7 @@ contract SimpleArbitrage is FlashLoanProvider {
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = borrowAmount;
 
-        bytes memory data = abi.encode(
-            tokenIn,
-            tokenOut,
-            forwardPaths,
-            backwardPaths
-        );
+        bytes memory data = abi.encode(tokenOut, forwardPaths, backwardPaths);
 
         flashLoan(tokens, amounts, data);
     }
@@ -43,11 +38,10 @@ contract SimpleArbitrage is FlashLoanProvider {
         bytes memory userData
     ) internal override {
         (
-            address tokenIn,
             address tokenOut,
             bytes[] memory forwardPaths,
             bytes[] memory backwardPaths
-        ) = abi.decode(userData, (address, address, bytes[], bytes[]));
+        ) = abi.decode(userData, (address, bytes[], bytes[]));
 
         TransferHelper.safeApprove(
             borrowedToken,
