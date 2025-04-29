@@ -69,7 +69,7 @@ contract SimpleArbitrage is FlashLoanProvider {
                     amountOutMinimum: 0
                 })
             );
-            console.log('AmountOut:', outAmount);
+            console.log('outAmount:', outAmount);
         }
 
         // 2. Backward swaps (tokenOut -> tokenIn)
@@ -94,7 +94,7 @@ contract SimpleArbitrage is FlashLoanProvider {
                     amountOutMinimum: 0
                 })
             );
-            console.log('AmountOut:', outAmount);
+            console.log('finalAmount:', finalAmount);
         }
 
         console.log('Final amount after backward swaps:', finalAmount);
