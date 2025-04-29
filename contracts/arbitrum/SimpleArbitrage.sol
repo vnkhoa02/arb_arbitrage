@@ -72,6 +72,7 @@ contract SimpleArbitrage is FlashLoanProvider {
             console.log('outAmount:', outAmount);
         }
 
+        TransferHelper.safeApprove(tokenOut, address(swapRouter), outAmount);
         // 2. Backward swaps (tokenOut -> tokenIn)
         uint256 finalAmount;
         for (uint256 i = 0; i < backwardPaths.length; i++) {
@@ -84,7 +85,6 @@ contract SimpleArbitrage is FlashLoanProvider {
             console.log('AmountIn:', amountIn);
             console.logBytes(path);
 
-            TransferHelper.safeApprove(tokenOut, address(swapRouter), amountIn);
             finalAmount += swapRouter.exactInput(
                 ISwapRouter.ExactInputParams({
                     path: path,

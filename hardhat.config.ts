@@ -34,6 +34,11 @@ const config: HardhatUserConfig = {
       default: 0, // first account in `accounts` array
     },
   },
+  verify: {
+    etherscan: {
+      apiKey: process.env.ETHERSCAN_API_KEY,
+    },
+  },
   mocha: {
     timeout: 100000000,
   },

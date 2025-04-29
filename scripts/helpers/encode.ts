@@ -1,33 +1,6 @@
 import { AbiCoder, ethers } from 'ethers';
 import { Route } from '../types/quote';
 
-// Encodes a path (token addresses and fees) for Uniswap V3 router
-export function encodePath(
-  amountIn: string,
-  tokens: string[],
-  fees: number[],
-): string {
-  if (tokens.length !== fees.length + 1) {
-    throw new Error('tokens.length must be fees.length + 1');
-  }
-
-  let path = '0x';
-
-  for (let i = 0; i < fees.length; i++) {
-    path += tokens[i].slice(2);
-    path += ethers.toBeHex(fees[i], 3).slice(2); // fee is uint24 (3 bytes)
-  }
-  path += tokens[tokens.length - 1].slice(2);
-
-  path = path.toLowerCase();
-  const encode = ethers.solidityPacked(['uint256', 'bytes'], [amountIn, path]);
-  return encode;
-}
-
-export function encodePathsAsBytes(paths: string[]): string[] {
-  return paths.map((path) => ethers.hexlify(ethers.toUtf8Bytes(path)));
-}
-
 /**
  * Reconstructs the UniswapV3 path bytes (tokenIn + fee + tokenOut) from one hop-array
  */
