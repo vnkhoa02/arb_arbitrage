@@ -74,8 +74,12 @@ contract FlashLoanSwapMock is FlashLoanProvider {
             console.log('AmountOut:', outAmount);
         }
 
+        console.log('Final amount after swaps:', outAmount);
+
         // Repay flash loan
         uint256 totalDebt = amountBorrowed + fee;
+        console.log('Total debt (loan + fee):', totalDebt);
+
         require(
             IERC20(borrowedToken).balanceOf(address(this)) >= totalDebt,
             'Not enough to repay loan'
