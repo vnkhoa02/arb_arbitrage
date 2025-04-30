@@ -125,9 +125,6 @@ contract SimpleArbitrage is FlashLoanProvider {
 
         uint256 profit = totalFinal - totalDebt;
 
-        // Transfer profit to owner
-        TransferHelper.safeTransfer(borrowedToken, owner, profit);
-
         emit ArbitrageCompleted(
             borrowedToken,
             tokenOut,
