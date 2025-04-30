@@ -11,7 +11,7 @@ import {
 import { FlashLoanSwapMock } from '../../typechain-types';
 import { mockRoute } from './mockData/routes';
 
-describe.only('FlashLoanSwapMock', () => {
+describe('FlashLoanSwapMock', () => {
   const BORROW_AMOUNT = ethers.utils.parseEther('1'); // 1 WETH (assuming decimals=18)
 
   let mock: FlashLoanSwapMock;

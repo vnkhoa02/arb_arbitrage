@@ -1,6 +1,5 @@
-import { FactoryOptions } from '@nomiclabs/hardhat-ethers/types';
+import { JsonRpcSigner } from '@ethersproject/providers';
 import { expect } from 'chai';
-import { Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
 import { provider } from '../../shared/lib/helpers/provider';
 import { BALANCER_VAULT, WETH } from '../../shared/mainnet_addr';
@@ -8,7 +7,7 @@ import type { FlashLoanProviderMock } from '../../typechain-types';
 
 describe('FlashLoanProvider', function () {
   let mock: FlashLoanProviderMock;
-  let owner: Signer | FactoryOptions | undefined;
+  let owner: JsonRpcSigner;
 
   before(async function () {
     owner = provider.getSigner();
@@ -17,7 +16,7 @@ describe('FlashLoanProvider', function () {
       owner,
     );
     mock = (await Factory.deploy()) as FlashLoanProviderMock;
-    await mock.waitForDeployment();
+    await mock.deployed();
 
     // 2) Impersonate the Balancer Vault account
     await network.provider.request({

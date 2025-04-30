@@ -14,7 +14,7 @@ describe('Arbitrage Tests', () => {
     owner = provider.getSigner();
     const Factory = await ethers.getContractFactory('Arbitrage', owner);
     arbitrage = (await Factory.deploy()) as Arbitrage;
-    await arbitrage.waitForDeployment();
+    await arbitrage.deployed();
   });
 
   it('simpleArbitrage', async function () {
