@@ -1,14 +1,13 @@
+import { JsonRpcSigner } from '@ethersproject/providers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { WETH } from '../../shared/arbitrum/mainnet_addr';
-import { FlashLoanProviderMock } from '../../typechain-types';
 import { provider } from '../../shared/lib/helpers/provider';
-import { FactoryOptions } from '@nomiclabs/hardhat-ethers/types';
-import { Signer } from 'ethers';
+import { FlashLoanProviderMock } from '../../typechain-types';
 
 describe('FlashLoanProvider Arbitrum', function () {
   let mock: FlashLoanProviderMock;
-  let owner: Signer | FactoryOptions | undefined;
+  let owner: JsonRpcSigner;
 
   before(async function () {
     owner = provider.getSigner();
@@ -17,7 +16,7 @@ describe('FlashLoanProvider Arbitrum', function () {
       owner,
     );
     mock = (await Factory.deploy()) as FlashLoanProviderMock;
-    await mock.waitForDeployment();
+    await mock.deployed();
   });
 
   it('reverts if receiveFlashLoan is not called by vault', async function () {

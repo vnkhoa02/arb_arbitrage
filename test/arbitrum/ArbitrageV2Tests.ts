@@ -6,18 +6,19 @@ import { ArbitrageV2 } from '../../typechain-types';
 import { mockRoute } from './mockData/routes';
 import { encodeParams } from '../../shared/lib/helpers/encode';
 import { provider } from '../../shared/lib/helpers/provider';
+import { JsonRpcSigner } from '@ethersproject/providers';
 
 describe('ArbitrageV2 Arbitrum', () => {
   const BORROW_AMOUNT = ethers.utils.parseEther('1'); // 1 WETH (assuming decimals=18)
 
   let arbitrage: ArbitrageV2;
-  let owner: any;
+  let owner: JsonRpcSigner;
 
   before(async () => {
     owner = provider.getSigner();
     const Factory = await ethers.getContractFactory('ArbitrageV2', owner);
     arbitrage = (await Factory.deploy()) as ArbitrageV2;
-    await arbitrage.waitForDeployment();
+    await arbitrage.deployed();
   });
 
   it('arbitrageDexes', async function () {
