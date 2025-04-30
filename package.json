@@ -11,7 +11,7 @@
     "compile": "hardhat compile",
     "t:fork:clean": "ts-node scripts/cleanTenderlyForks.ts",
     "test": "npm run compile && hardhat test --network vitrualMainnet",
-    "deploy:verify": "npx hardhat deploy --tags Simulate --network hardhat",
+    "deploy:verify": "npx hardhat deploy --tags Simulate --network vitrualMainnet",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "dependencies": {

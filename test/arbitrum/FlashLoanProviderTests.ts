@@ -27,9 +27,7 @@ describe('FlashLoanProvider Arbitrum', function () {
 
   it('prevents non-owner from calling testFlashLoan()', async function () {
     // pick any other signer
-    const nonOwner = provider.getSigner(
-      '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
-    );
+    const [_, nonOwner] = await ethers.getSigners();
     await expect(
       mock.connect(nonOwner).testFlashLoan([WETH], [0], '0x'),
     ).to.be.revertedWith('Not owner');
