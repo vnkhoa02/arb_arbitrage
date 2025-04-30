@@ -1,14 +1,17 @@
+import { FactoryOptions } from '@nomiclabs/hardhat-ethers/types';
 import { expect } from 'chai';
+import { Signer } from 'ethers';
 import { ethers, network } from 'hardhat';
+import { provider } from '../../shared/lib/helpers/provider';
 import { BALANCER_VAULT, WETH } from '../../shared/mainnet_addr';
 import type { FlashLoanProviderMock } from '../../typechain-types';
 
 describe('FlashLoanProvider', function () {
   let mock: FlashLoanProviderMock;
-  let owner: Awaited<ReturnType<typeof ethers.getSigner>>;
+  let owner: Signer | FactoryOptions | undefined;
 
   before(async function () {
-    [owner] = await ethers.getSigners();
+    owner = provider.getSigner();
     const Factory = await ethers.getContractFactory(
       'FlashLoanProviderMock',
       owner,
@@ -31,7 +34,9 @@ describe('FlashLoanProvider', function () {
 
   it('prevents non-owner from calling testFlashLoan()', async function () {
     // pick any other signer
-    const nonOwner = (await ethers.getSigners())[1];
+    const nonOwner = provider.getSigner(
+      '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+    );
     await expect(
       mock.connect(nonOwner).testFlashLoan([WETH], [0], '0x'),
     ).to.be.revertedWith('Not owner');
@@ -39,7 +44,7 @@ describe('FlashLoanProvider', function () {
 
   it('allows the owner to initiate a flash loan via testFlashLoan()', async function () {
     const tokens = [WETH];
-    const amounts = [ethers.parseEther('0.05')];
+    const amounts = [ethers.utils.parseEther('0.05')];
     const ud = '0xdeadbeef';
 
     await expect(mock.connect(owner).testFlashLoan(tokens, amounts, ud)).to.not

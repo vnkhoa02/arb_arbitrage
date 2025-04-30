@@ -9,7 +9,7 @@ import type { SimpleArbitrage } from '../../typechain-types';
 import { mockRoute } from './mockData/routes';
 
 describe('SimpleArbitrage Arbitrum', () => {
-  const BORROW_AMOUNT = ethers.parseEther('1'); // 1 WETH
+  const BORROW_AMOUNT = ethers.utils.parseEther('1'); // 1 WETH
 
   let mock: SimpleArbitrage;
   let owner: any;
@@ -22,7 +22,7 @@ describe('SimpleArbitrage Arbitrum', () => {
     owner = fork.provider.getSigner();
     const Factory = await ethers.getContractFactory('SimpleArbitrage', owner);
     mock = await Factory.deploy();
-    mock = await ethers.getContractAt('SimpleArbitrage', mock.target);
+    mock = await ethers.getContractAt('SimpleArbitrage', mock.address);
   });
 
   // after(async () => {

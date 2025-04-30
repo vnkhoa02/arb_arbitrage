@@ -10,8 +10,8 @@ import {
 import { FlashLoanSwapMock } from '../../typechain-types';
 import { mockRoute } from './mockData/routes';
 
-describe('FlashLoanSwapMock', () => {
-  const BORROW_AMOUNT = ethers.parseEther('1'); // 1 WETH (assuming decimals=18)
+describe.only('FlashLoanSwapMock', () => {
+  const BORROW_AMOUNT = ethers.utils.parseEther('1'); // 1 WETH (assuming decimals=18)
 
   let mock: FlashLoanSwapMock;
   let owner: any;
@@ -24,14 +24,18 @@ describe('FlashLoanSwapMock', () => {
     owner = fork.provider.getSigner();
     const Factory = await ethers.getContractFactory('FlashLoanSwapMock', owner);
     const tx = await Factory.deploy();
-    mock = await ethers.getContractAt('FlashLoanSwapMock', tx.target);
-    console.log('FlashLoanSwapMock deployed at', mock.target);
-
+    console.log('waitForDeployment');
+    await tx.waitForDeployment();
+    mock = await ethers.getContractAt('FlashLoanSwapMock', tx.address);
+    console.log('FlashLoanSwapMock deployed at', mock.address);
     const IWETH = await ethers.getContractAt('IWETH', WETH);
     await IWETH.connect(owner).deposit({
-      value: ethers.parseEther('10'),
+      value: ethers.utils.parseEther('10'),
     });
-    await IWETH.connect(owner).transfer(mock.target, ethers.parseEther('10'));
+    await IWETH.connect(owner).transfer(
+      mock.address,
+      ethers.utils.parseEther('10'),
+    );
   });
 
   it('flashLoanAndSwap', async function () {
@@ -49,9 +53,9 @@ describe('FlashLoanSwapMock', () => {
 
   it('withdraw', async function () {
     const usdt = await ethers.getContractAt('IWETH', USDT);
-    const contractAddress = await usdt.getAddress();
+    const contractAddress = usdt.address;
     console.log('usdt addr ->', contractAddress);
-    const ownerAddress = await owner.getAddress();
+    const ownerAddress = await owner.address;
     console.log('ownerAddress ->', contractAddress);
     // Get balance before withdrawal
     const balanceBefore = await usdt.balanceOf(ownerAddress);

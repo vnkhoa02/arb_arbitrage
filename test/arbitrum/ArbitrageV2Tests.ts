@@ -5,15 +5,16 @@ import { USDT, WETH } from '../../shared/arbitrum/mainnet_addr';
 import { ArbitrageV2 } from '../../typechain-types';
 import { mockRoute } from './mockData/routes';
 import { encodeParams } from '../../shared/lib/helpers/encode';
+import { provider } from '../../shared/lib/helpers/provider';
 
 describe('ArbitrageV2 Arbitrum', () => {
-  const BORROW_AMOUNT = ethers.parseEther('1'); // 1 WETH (assuming decimals=18)
+  const BORROW_AMOUNT = ethers.utils.parseEther('1'); // 1 WETH (assuming decimals=18)
 
   let arbitrage: ArbitrageV2;
   let owner: any;
 
   before(async () => {
-    [owner] = await ethers.getSigners();
+    owner = provider.getSigner();
     const Factory = await ethers.getContractFactory('ArbitrageV2', owner);
     arbitrage = (await Factory.deploy()) as ArbitrageV2;
     await arbitrage.waitForDeployment();

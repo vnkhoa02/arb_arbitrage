@@ -1,4 +1,4 @@
-import { AbiCoder, ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { Route } from '../../types/quote';
 
 /**
@@ -11,7 +11,9 @@ export function encodeRouteToPath(hops: Route[]): string {
     // 20-byte tokenIn
     path += hop.tokenIn.address.toLowerCase().slice(2);
     // 3-byte fee
-    path += ethers.zeroPadValue(ethers.toBeHex(BigInt(hop.fee)), 3).slice(2);
+    path += ethers.utils
+      .hexZeroPad(BigNumber.from(hop.fee).toHexString(), 3)
+      .slice(2);
     // on last hop, append tokenOut
     if (i === hops.length - 1) {
       path += hop.tokenOut.address.toLowerCase().slice(2);
@@ -30,7 +32,7 @@ export function encodeParams(hops: Route[]): string {
   }
   const amountIn = BigInt(hops[0].amountIn);
   const pathBytes = encodeRouteToPath(hops);
-  return AbiCoder.defaultAbiCoder().encode(
+  return ethers.utils.defaultAbiCoder.encode(
     ['uint256', 'bytes'],
     [amountIn, pathBytes],
   );

@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { DAI, SAITO } from '../../shared/mainnet_addr';
 import { Arbitrage } from '../../typechain-types';
-import { parseUnits } from 'ethers';
 import { findBestPath, pickBestRoute } from '../../shared/lib/helpers/getQuote';
+import { provider } from '../../shared/lib/helpers/provider';
 
 describe('Arbitrage Tests', () => {
   const BORROW_AMOUNT = 1000; // 1000 USD
@@ -11,7 +11,7 @@ describe('Arbitrage Tests', () => {
   let owner: any;
 
   before(async () => {
-    [owner] = await ethers.getSigners();
+    owner = provider.getSigner();
     const Factory = await ethers.getContractFactory('Arbitrage', owner);
     arbitrage = (await Factory.deploy()) as Arbitrage;
     await arbitrage.waitForDeployment();
@@ -29,10 +29,16 @@ describe('Arbitrage Tests', () => {
 
     // 3) Destructure the two encoded routes (bytes)
     const forwardRoute = pickBestRoute(path.forward.route);
-    const forwardOutMin = parseUnits(path.forward.amountOut.toString(), 18);
+    const forwardOutMin = ethers.utils.parseUnits(
+      path.forward.amountOut.toString(),
+      18,
+    );
     const backwardRoute = pickBestRoute(path.backward.route);
-    const backwardOutMin = parseUnits(path.backward.amountOut.toString(), 18);
-    const amountIn = parseUnits(BORROW_AMOUNT.toString(), 18); // returns BigInt
+    const backwardOutMin = ethers.utils.parseUnits(
+      path.backward.amountOut.toString(),
+      18,
+    );
+    const amountIn = ethers.utils.parseUnits(BORROW_AMOUNT.toString(), 18); // returns BigInt
 
     const tx = arbitrage
       .connect(owner)
@@ -47,8 +53,11 @@ describe('Arbitrage Tests', () => {
       );
     await Promise.allSettled([tx]);
 
-    const bal = await ethers.provider.getBalance(arbitrage.target);
-    console.log('Arbitrage contract ETH balance:', ethers.formatEther(bal));
+    const bal = await provider.getBalance(arbitrage.address);
+    console.log(
+      'Arbitrage contract ETH balance:',
+      ethers.utils.formatEther(bal),
+    );
     expect(bal).to.be.gte(0);
   });
 });

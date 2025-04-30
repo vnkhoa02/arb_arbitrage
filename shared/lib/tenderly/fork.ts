@@ -1,7 +1,6 @@
 import { JsonRpcProvider, JsonRpcSigner } from '@ethersproject/providers';
 import axios, { AxiosResponse } from 'axios';
 import * as dotenv from 'dotenv';
-import { Signer } from 'ethers';
 
 dotenv.config();
 

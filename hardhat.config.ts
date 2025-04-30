@@ -1,11 +1,13 @@
 import '@nomicfoundation/hardhat-chai-matchers';
+import '@nomicfoundation/hardhat-toolbox';
 import '@nomicfoundation/hardhat-ethers';
-import '@tenderly/hardhat-tenderly';
 import '@typechain/hardhat';
 import 'dotenv/config';
-import 'hardhat-deploy';
 import type { HardhatUserConfig } from 'hardhat/config';
+import 'hardhat-deploy';
 import path from 'path';
+
+import '@tenderly/hardhat-tenderly';
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [];
 
