@@ -65,21 +65,20 @@ contract SimpleArbitrage is FlashLoanProvider {
         );
 
         uint256 totalOut = 0;
-        uint256 amountPerForward = amountBorrowed / forwardPaths.length;
-
         // Forward swaps: tokenIn -> tokenOut
         for (uint256 i = 0; i < forwardPaths.length; ) {
-            uint256 thisAmountIn = (i == forwardPaths.length - 1)
-                ? amountBorrowed - (amountPerForward * i) // handle remainder
-                : amountPerForward;
-
+            (
+                uint256 amountIn,
+                uint256 amountOutMinimum,
+                bytes memory path
+            ) = abi.decode(forwardPaths[i], (uint256, uint256, bytes));
             totalOut += swapRouter.exactInput(
                 ISwapRouter.ExactInputParams({
-                    path: forwardPaths[i],
+                    path: path,
                     recipient: address(this),
                     deadline: block.timestamp + 1 minutes,
-                    amountIn: thisAmountIn,
-                    amountOutMinimum: 0
+                    amountIn: amountIn,
+                    amountOutMinimum: amountOutMinimum
                 })
             );
 
@@ -97,21 +96,22 @@ contract SimpleArbitrage is FlashLoanProvider {
         );
 
         uint256 totalFinal = 0;
-        uint256 amountPerBackward = totalOut / backwardPaths.length;
 
         // Backward swaps: tokenOut -> tokenIn
         for (uint256 i = 0; i < backwardPaths.length; ) {
-            uint256 thisAmountIn = (i == backwardPaths.length - 1)
-                ? totalOut - (amountPerBackward * i)
-                : amountPerBackward;
+            (
+                uint256 amountIn,
+                uint256 amountOutMinimum,
+                bytes memory path
+            ) = abi.decode(backwardPaths[i], (uint256, uint256, bytes));
 
             totalFinal += swapRouter.exactInput(
                 ISwapRouter.ExactInputParams({
-                    path: backwardPaths[i],
+                    path: path,
                     recipient: address(this),
                     deadline: block.timestamp + 1 minutes,
-                    amountIn: thisAmountIn,
-                    amountOutMinimum: 0
+                    amountIn: amountIn,
+                    amountOutMinimum: amountOutMinimum
                 })
             );
 

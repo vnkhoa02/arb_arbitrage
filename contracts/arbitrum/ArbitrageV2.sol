@@ -87,10 +87,11 @@ contract ArbitrageV2 is FlashLoanProvider {
         address tokenIn
     ) internal returns (uint256 outAmount) {
         for (uint256 i = 0; i < forwardPaths.length; ) {
-            (uint256 amountIn, bytes memory path) = abi.decode(
-                forwardPaths[i],
-                (uint256, bytes)
-            );
+            (
+                uint256 amountIn,
+                uint256 amountOutMinimum,
+                bytes memory path
+            ) = abi.decode(forwardPaths[i], (uint256, uint256, bytes));
 
             // Reset and set approval
             TransferHelper.safeApprove(tokenIn, address(swapRouter), 0);
@@ -102,7 +103,7 @@ contract ArbitrageV2 is FlashLoanProvider {
                     recipient: address(this),
                     deadline: block.timestamp + 1 minutes,
                     amountIn: amountIn,
-                    amountOutMinimum: 0
+                    amountOutMinimum: amountOutMinimum
                 })
             );
 

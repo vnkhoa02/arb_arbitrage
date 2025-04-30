@@ -11,7 +11,7 @@ import {
 import { FlashLoanSwapMock } from '../../typechain-types';
 import { mockRoute } from './mockData/routes';
 
-describe('FlashLoanSwapMock', () => {
+describe.only('FlashLoanSwapMock', () => {
   const BORROW_AMOUNT = ethers.utils.parseEther('1'); // 1 WETH (assuming decimals=18)
 
   let mock: FlashLoanSwapMock;
@@ -24,9 +24,8 @@ describe('FlashLoanSwapMock', () => {
     });
     owner = fork.provider.getSigner();
     const Factory = await ethers.getContractFactory('FlashLoanSwapMock', owner);
-    const tx = await Factory.deploy();
-    console.log('waitForDeployment');
-    mock = await tx.deployed();
+    mock = await Factory.deploy();
+    mock = await mock.deployed();
     console.log('FlashLoanSwapMock deployed at', mock.address);
     const IWETH = await ethers.getContractAt('IWETH', WETH);
     await IWETH.connect(owner).deposit({
@@ -40,6 +39,7 @@ describe('FlashLoanSwapMock', () => {
 
   it('flashLoanAndSwap', async function () {
     const forwardPaths = mockRoute.forward.route.map((r) => encodeParams(r));
+    console.log('forwardPaths', forwardPaths);
     const tx = await mock
       .connect(owner)
       .flashLoanAndSwap(forwardPaths, WETH, USDT, BORROW_AMOUNT);

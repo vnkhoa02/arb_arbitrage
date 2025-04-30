@@ -47,18 +47,21 @@ contract FlashLoanSwapMock is FlashLoanProvider {
         console.log('Borrowed Token:', borrowedToken);
         console.log('Target Token:', targetToken);
 
+        // Approve router for borrowedToken
+        TransferHelper.safeApprove(borrowedToken, address(swapRouter), 0);
         TransferHelper.safeApprove(
             borrowedToken,
             address(swapRouter),
-            amountBorrowed
+            type(uint256).max
         );
 
         uint256 outAmount;
         for (uint256 i = 0; i < forwardPaths.length; i++) {
-            (uint256 amountIn, bytes memory path) = abi.decode(
-                forwardPaths[i],
-                (uint256, bytes)
-            );
+            (
+                uint256 amountIn,
+                uint256 amountOutMinimum,
+                bytes memory path
+            ) = abi.decode(forwardPaths[i], (uint256, uint256, bytes));
             console.log('Forward swap #%s', i);
             console.log('AmountIn:', amountIn);
             console.logBytes(path);
@@ -68,7 +71,7 @@ contract FlashLoanSwapMock is FlashLoanProvider {
                     recipient: address(this),
                     deadline: block.timestamp,
                     amountIn: amountIn,
-                    amountOutMinimum: 0
+                    amountOutMinimum: amountOutMinimum
                 })
             );
             console.log('AmountOut:', outAmount);
