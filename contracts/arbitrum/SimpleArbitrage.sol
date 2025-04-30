@@ -9,12 +9,6 @@ contract SimpleArbitrage is FlashLoanProvider {
     ISwapRouter private constant swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
-    struct Swap {
-        uint256 amountIn;
-        uint256 amountOutMinimum;
-        bytes path;
-    }
-
     event ArbitrageStarted(
         address indexed tokenIn,
         address indexed tokenOut,
@@ -58,9 +52,9 @@ contract SimpleArbitrage is FlashLoanProvider {
     ) internal override nonReentrant {
         (
             address tokenOut,
-            Swap[] memory forwardSwaps,
-            Swap[] memory backwardSwaps
-        ) = abi.decode(userData, (address, Swap[], Swap[]));
+            bytes[] memory forwardPaths,
+            bytes[] memory backwardPaths
+        ) = abi.decode(userData, (address, bytes[], bytes[]));
 
         // Approve router for borrowedToken
         TransferHelper.safeApprove(borrowedToken, address(swapRouter), 0);
@@ -69,20 +63,26 @@ contract SimpleArbitrage is FlashLoanProvider {
             address(swapRouter),
             type(uint256).max
         );
-        uint256 totalOut;
+
+        uint256 totalOut = 0;
+        uint256 amountPerForward = amountBorrowed / forwardPaths.length;
 
         // Forward swaps: tokenIn -> tokenOut
-        for (uint256 i = 0; i < forwardSwaps.length; ) {
-            Swap memory s = forwardSwaps[i];
+        for (uint256 i = 0; i < forwardPaths.length; ) {
+            uint256 thisAmountIn = (i == forwardPaths.length - 1)
+                ? amountBorrowed - (amountPerForward * i) // handle remainder
+                : amountPerForward;
+
             totalOut += swapRouter.exactInput(
                 ISwapRouter.ExactInputParams({
-                    path: s.path,
+                    path: forwardPaths[i],
                     recipient: address(this),
                     deadline: block.timestamp + 1 minutes,
-                    amountIn: s.amountIn,
-                    amountOutMinimum: s.amountOutMinimum
+                    amountIn: thisAmountIn,
+                    amountOutMinimum: 0
                 })
             );
+
             unchecked {
                 i++;
             }
@@ -96,20 +96,25 @@ contract SimpleArbitrage is FlashLoanProvider {
             type(uint256).max
         );
 
-        uint256 totalFinal;
+        uint256 totalFinal = 0;
+        uint256 amountPerBackward = totalOut / backwardPaths.length;
 
         // Backward swaps: tokenOut -> tokenIn
-        for (uint256 i = 0; i < backwardSwaps.length; ) {
-            Swap memory s = backwardSwaps[i];
+        for (uint256 i = 0; i < backwardPaths.length; ) {
+            uint256 thisAmountIn = (i == backwardPaths.length - 1)
+                ? totalOut - (amountPerBackward * i)
+                : amountPerBackward;
+
             totalFinal += swapRouter.exactInput(
                 ISwapRouter.ExactInputParams({
-                    path: s.path,
+                    path: backwardPaths[i],
                     recipient: address(this),
                     deadline: block.timestamp + 1 minutes,
-                    amountIn: s.amountIn,
-                    amountOutMinimum: s.amountOutMinimum
+                    amountIn: thisAmountIn,
+                    amountOutMinimum: 0
                 })
             );
+
             unchecked {
                 i++;
             }
@@ -119,6 +124,7 @@ contract SimpleArbitrage is FlashLoanProvider {
         require(totalFinal > totalDebt, 'Arbitrage not profitable');
 
         uint256 profit = totalFinal - totalDebt;
+
         // Transfer profit to owner
         TransferHelper.safeTransfer(borrowedToken, owner, profit);
 

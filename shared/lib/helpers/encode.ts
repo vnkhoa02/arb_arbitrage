@@ -32,8 +32,9 @@ export function encodeParams(hops: Route[]): string {
   }
   const amountIn = BigInt(hops[0].amountIn);
   const pathBytes = encodeRouteToPath(hops);
+  const amountOutMinimum = 0;
   return ethers.utils.defaultAbiCoder.encode(
-    ['uint256', 'bytes'],
-    [amountIn, pathBytes],
+    ['uint256', 'uint256', 'bytes'],
+    [amountIn, amountOutMinimum, pathBytes],
   );
 }
