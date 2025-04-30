@@ -1,12 +1,11 @@
-import path from 'path';
+import '@nomicfoundation/hardhat-chai-matchers';
+import '@nomicfoundation/hardhat-ethers';
+import '@tenderly/hardhat-tenderly';
+import '@typechain/hardhat';
 import 'dotenv/config';
 import 'hardhat-deploy';
-import '@nomicfoundation/hardhat-ethers';
-import '@nomicfoundation/hardhat-chai-matchers';
-import '@nomicfoundation/hardhat-toolbox';
-import '@typechain/hardhat';
 import type { HardhatUserConfig } from 'hardhat/config';
-import '@tenderly/hardhat-tenderly';
+import path from 'path';
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [];
 
@@ -45,11 +44,6 @@ const config: HardhatUserConfig = {
   namedAccounts: {
     deployer: {
       default: 0, // first account in `accounts` array
-    },
-  },
-  verify: {
-    etherscan: {
-      apiKey: process.env.ETHERSCAN_API_KEY,
     },
   },
   mocha: {
