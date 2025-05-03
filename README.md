@@ -27,3 +27,15 @@ This project implements an **on-chain arbitrage bot** using **flash loans from B
 | Arbitrum    | L2 deployment & faster settlement          |
 
 ---
+
+## ⚙️ Installation
+
+```bash
+git clone https://github.com/vnkhoa02/arb_arbitrage.git
+cd arb_arbitrage
+npm install
+
+git clone https://github.com/vnkhoa02/arb_arbitrage_scanner.git
+cd arb_arbitrage_scanner
+npm install
+```
