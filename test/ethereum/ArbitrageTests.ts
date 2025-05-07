@@ -1,63 +1,49 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { DAI, SAITO } from '../../shared/mainnet_addr';
-import { Arbitrage } from '../../typechain-types';
-import { findBestPath, pickBestRoute } from '../../shared/lib/helpers/getQuote';
-import { provider } from '../../shared/lib/helpers/provider';
+import { encodeParams } from '../../shared/lib/helpers/encode';
+import {
+  EthersOnTenderlyFork,
+  forkForTest,
+} from '../../shared/lib/tenderly/fork';
+import type { EtherSimpleArbitrage } from '../../typechain-types';
+import { mockRoute } from './mockData/routes';
 
-describe('Arbitrage Tests', () => {
-  const BORROW_AMOUNT = 1000; // 1000 USD
-  let arbitrage: Arbitrage;
+describe('EtherSimpleArbitrage Mainnet', () => {
+  const BORROW_AMOUNT = ethers.utils.parseEther('1'); // 1 WETH
+
+  let mock: EtherSimpleArbitrage;
   let owner: any;
+  let fork: EthersOnTenderlyFork;
 
   before(async () => {
-    owner = provider.getSigner();
-    const Factory = await ethers.getContractFactory('Arbitrage', owner);
-    arbitrage = (await Factory.deploy()) as Arbitrage;
-    await arbitrage.deployed();
+    fork = await forkForTest({
+      network_id: '1',
+    });
+    owner = fork.provider.getSigner();
+    const Factory = await ethers.getContractFactory(
+      'EtherSimpleArbitrage',
+      owner,
+    );
+    mock = await Factory.deploy();
+    mock = await ethers.getContractAt('EtherSimpleArbitrage', mock.address);
   });
 
-  it('simpleArbitrage', async function () {
-    // 1) find the best path (must now include encoded paths)
-    const path = await findBestPath(DAI, SAITO, BORROW_AMOUNT.toString());
+  // after(async () => {
+  //   if (fork) await fork.removeFork();
+  // });
 
-    // 2) skip if not profitable
-    if (!path.roundTrip.isProfitable) {
-      console.log('No arbitrage opportunity found.');
-      return this.skip();
-    }
-
-    // 3) Destructure the two encoded routes (bytes)
-    const forwardRoute = pickBestRoute(path.forward.route);
-    const forwardOutMin = ethers.utils.parseUnits(
-      path.forward.amountOut.toString(),
-      18,
-    );
-    const backwardRoute = pickBestRoute(path.backward.route);
-    const backwardOutMin = ethers.utils.parseUnits(
-      path.backward.amountOut.toString(),
-      18,
-    );
-    const amountIn = ethers.utils.parseUnits(BORROW_AMOUNT.toString(), 18); // returns BigInt
-
-    const tx = arbitrage
+  it('simpleArbitrage does not revert with mockRoute', async function () {
+    const forwardPaths = mockRoute.forward.route.map((r) => encodeParams(r));
+    const backwardPaths = mockRoute.backward.route.map((r) => encodeParams(r));
+    const tx = mock
       .connect(owner)
       .simpleArbitrage(
-        DAI,
-        SAITO,
-        forwardRoute.encoded,
-        forwardOutMin,
-        backwardRoute.encoded,
-        backwardOutMin,
-        amountIn,
+        mockRoute.forward.tokenIn,
+        mockRoute.forward.tokenOut,
+        forwardPaths,
+        backwardPaths,
+        BORROW_AMOUNT,
       );
-    await Promise.allSettled([tx]);
-
-    const bal = await provider.getBalance(arbitrage.address);
-    console.log(
-      'Arbitrage contract ETH balance:',
-      ethers.utils.formatEther(bal),
-    );
-    expect(bal).to.be.gte(0);
+    await expect(tx).to.not.be.reverted;
   });
 });
