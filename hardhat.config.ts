@@ -21,7 +21,7 @@ const config: HardhatUserConfig = {
     },
   },
   paths: {
-    deploy: path.join(__dirname, 'scripts/deploy/'),
+    deploy: path.join(__dirname, 'scripts/deploy/ether'),
   },
   tenderly: {
     project: process.env.TENDERLY_PROJECT as string,
