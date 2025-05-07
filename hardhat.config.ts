@@ -21,7 +21,7 @@ const config: HardhatUserConfig = {
     },
   },
   paths: {
-    deploy: path.join(__dirname, 'scripts/deploy/arbitrum'),
+    deploy: path.join(__dirname, 'scripts/deploy/'),
   },
   tenderly: {
     project: process.env.TENDERLY_PROJECT as string,
@@ -31,19 +31,22 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: process.env.INFURA_ARBITRUM_MAINNET_URL as string,
-        // blockNumber: 331152474,
+        url: process.env.INFURA_MAINNET_URL as string,
       },
     },
     vitrualMainnet: {
-      chainId: 42161,
+      chainId: 1,
       url: process.env.VIRTUAL_MAINNET_RPC_URL as string,
     },
-    // mainnet: {
-    //   url: process.env.INFURA_MAINNET_URL,
-    //   accounts: PRIVATE_KEY,
-    //   chainId: 1,
-    // },
+    mainnet: {
+      url: process.env.INFURA_MAINNET_URL,
+      accounts: PRIVATE_KEY,
+      chainId: 1,
+    },
+    vitrualArbMainnet: {
+      chainId: 42161,
+      url: process.env.VIRTUAL_ARBITRUM_MAINNET_RPC_URL as string,
+    },
     arbMainnet: {
       url: process.env.INFURA_ARBITRUM_MAINNET_URL,
       accounts: PRIVATE_KEY,

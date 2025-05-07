@@ -8,15 +8,15 @@ const deployArbitrage: DeployFunction = async function (
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  console.log('Deploying Arbitrage...');
+  console.log('Deploying SimpleArbitrage...');
 
-  const result = await deploy('Arbitrage', {
+  const result = await deploy('SimpleArbitrage', {
     from: deployer,
     log: true,
     waitConfirmations: 3,
   });
 
-  console.log('Arbitrage deployed to:', result.address);
+  console.log('SimpleArbitrage deployed to:', result.address);
 };
 
 export default deployArbitrage;
