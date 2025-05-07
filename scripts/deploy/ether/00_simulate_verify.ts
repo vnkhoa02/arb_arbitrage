@@ -13,8 +13,10 @@ const simulateDeploy: DeployFunction = async function (
     return;
   }
 
-  console.log('🔧 Simulating Arbitrage deployment on forked mainnet...');
-  const result = await deploy('Arbitrage', {
+  console.log(
+    '🔧 Simulating EtherSimpleArbitrage deployment on forked mainnet...',
+  );
+  const result = await deploy('EtherSimpleArbitrage', {
     from: deployer,
     log: true,
   });

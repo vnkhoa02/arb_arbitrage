@@ -5,7 +5,7 @@ import '@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 import {FlashLoanProvider} from '../FlashLoanProvider.sol';
 
-contract SimpleArbitrage is FlashLoanProvider {
+contract EtherSimpleArbitrage is FlashLoanProvider {
     ISwapRouter private constant swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 

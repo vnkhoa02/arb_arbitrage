@@ -5,13 +5,13 @@ import {
   EthersOnTenderlyFork,
   forkForTest,
 } from '../../shared/lib/tenderly/fork';
-import type { SimpleArbitrage } from '../../typechain-types';
+import type { EtherSimpleArbitrage } from '../../typechain-types';
 import { mockRoute } from './mockData/routes';
 
-describe('SimpleArbitrage Mainnet', () => {
+describe('EtherSimpleArbitrage Mainnet', () => {
   const BORROW_AMOUNT = ethers.utils.parseEther('1'); // 1 WETH
 
-  let mock: SimpleArbitrage;
+  let mock: EtherSimpleArbitrage;
   let owner: any;
   let fork: EthersOnTenderlyFork;
 
@@ -20,9 +20,12 @@ describe('SimpleArbitrage Mainnet', () => {
       network_id: '1',
     });
     owner = fork.provider.getSigner();
-    const Factory = await ethers.getContractFactory('SimpleArbitrage', owner);
+    const Factory = await ethers.getContractFactory(
+      'EtherSimpleArbitrage',
+      owner,
+    );
     mock = await Factory.deploy();
-    mock = await ethers.getContractAt('SimpleArbitrage', mock.address);
+    mock = await ethers.getContractAt('EtherSimpleArbitrage', mock.address);
   });
 
   // after(async () => {
